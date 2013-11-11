@@ -1,0 +1,1390 @@
+package com.yupog2003.tripdiary;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
+
+import com.google.analytics.tracking.android.EasyTracker;
+import com.google.analytics.tracking.android.MapBuilder;
+import com.google.android.gms.auth.GoogleAuthException;
+import com.google.android.gms.auth.GoogleAuthUtil;
+import com.google.android.gms.auth.UserRecoverableAuthException;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
+import com.google.android.gms.maps.GoogleMap.OnMapLongClickListener;
+import com.google.android.gms.maps.GoogleMap.OnMarkerDragListener;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.api.client.extensions.android.http.AndroidHttp;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
+import com.google.api.client.http.FileContent;
+import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.services.drive.Drive;
+import com.google.api.services.drive.DriveScopes;
+import com.google.api.services.drive.model.Permission;
+import com.yupog2003.tripdiary.data.DeviceHelper;
+import com.yupog2003.tripdiary.data.FileHelper;
+import com.yupog2003.tripdiary.data.MyLatLng2;
+import com.yupog2003.tripdiary.data.POI;
+import com.yupog2003.tripdiary.data.PackageHelper;
+import com.yupog2003.tripdiary.data.TimeAnalyzer;
+import com.yupog2003.tripdiary.data.FileHelper.DirAdapter;
+import com.yupog2003.tripdiary.data.Trip;
+import com.yupog2003.tripdiary.services.SendTripService;
+
+import android.media.ExifInterface;
+import android.media.MediaPlayer;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.preference.PreferenceManager;
+import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.app.ActionBar;
+import android.app.ActionBar.OnNavigationListener;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.FragmentTransaction;
+import android.app.NotificationManager;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.DialogInterface.OnCancelListener;
+import android.content.res.Configuration;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.text.format.Time;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup.LayoutParams;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
+import android.widget.DatePicker;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
+import android.widget.SearchView;
+import android.widget.SeekBar;
+import android.widget.SearchView.OnQueryTextListener;
+import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.SpinnerAdapter;
+import android.widget.TextView;
+import android.widget.TimePicker;
+import android.widget.Toast;
+
+public class ViewMapActivity extends Activity implements OnInfoWindowClickListener, OnMapLongClickListener, OnMarkerDragListener, OnClickListener {
+	MapFragment mapFragment;
+	GoogleMap gmap;
+	String path;
+	String name;
+	ArrayList<Marker> markers;
+	public static Trip trip;
+	LatLng[] lat;
+	ImageButton viewInformation;
+	ImageButton switchMapMode;
+	ImageButton playTrip;
+	ImageButton stopTrip;
+	ImageButton fastforward;
+	ImageButton slowforward;
+	ImageButton showBar;
+	ImageButton viewGraph;
+	ImageButton viewCost;
+	ImageButton viewNote;
+	SeekBar processSeekBar;
+	TextView time;
+	boolean showAll = true;
+	SearchView search;
+	Thread playThread;
+	PlayRunnable playRunnable;
+	Handler handler;
+	int trackColor;
+	LinearLayout buttonBar;
+	GoogleAccountCredential credential;
+	String token;
+	String account;
+
+	private static final int import_track = 0;
+	private static final int update_request = 1;
+	private static final int REQUEST_ACCOUNT_PICKER = 2;
+	private static final int REQUEST_AUTHORIZATION = 3;
+	private static final int REQUEST_GET_TOKEN = 4;
+	// private static final int playtriptype_normal=0;
+	private static final int playtriptype_skyview = 1;
+	private static final int request_write_location_to_POI = 1;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_view_map);
+		mapFragment = MapFragment.newInstance();
+		FragmentTransaction ft = getFragmentManager().beginTransaction();
+		ft.replace(R.id.maplayout, mapFragment, "mapFragment");
+		ft.commit();
+		getActionBar().setDisplayHomeAsUpEnabled(true);
+		getActionBar().setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
+		buttonBar = (LinearLayout) findViewById(R.id.buttonbar);
+		path = getIntent().getStringExtra("path");
+		name = getIntent().getStringExtra("name");
+		trackColor = PreferenceManager.getDefaultSharedPreferences(ViewMapActivity.this).getInt("trackcolor", 0xff6699cc);
+		if (getIntent().getBooleanExtra("stoptrip", false)) {
+			NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+			nm.cancel(0);
+		}
+		this.setTitle(name);
+		if (new File(path + "/" + name + "/" + name + ".gpx").length() > 0) {
+			new SetLocus().execute(0);
+		} else {
+			AlertDialog.Builder ab = new AlertDialog.Builder(this);
+			ab.setTitle(getString(R.string.cannot_find_gpx_data));
+			ab.setMessage(getString(R.string.ask_import_gpx_file));
+			ab.setPositiveButton(getString(R.string.enter), new DialogInterface.OnClickListener() {
+
+				public void onClick(DialogInterface dialog, int which) {
+					// TODO Auto-generated method stub
+					importGpx();
+				}
+			});
+			ab.setNegativeButton(getString(R.string.cancel), new DialogInterface.OnClickListener() {
+
+				public void onClick(DialogInterface dialog, int which) {
+					// TODO Auto-generated method stub
+					Toast.makeText(getBaseContext(), getString(R.string.there_is_no_data_to_display), Toast.LENGTH_LONG).show();
+					ViewMapActivity.this.finish();
+				}
+			});
+			ab.show();
+		}
+		markers = new ArrayList<Marker>();
+		handler = new Handler();
+		viewInformation = (ImageButton) findViewById(R.id.viewinformation);
+		switchMapMode = (ImageButton) findViewById(R.id.switchmapmode);
+		playTrip = (ImageButton) findViewById(R.id.playtrip);
+		stopTrip = (ImageButton) findViewById(R.id.stoptrip);
+		fastforward = (ImageButton) findViewById(R.id.fastforward);
+		slowforward = (ImageButton) findViewById(R.id.slowforward);
+		showBar = (ImageButton) findViewById(R.id.showbar);
+		viewGraph = (ImageButton) findViewById(R.id.viewgraph);
+		viewCost = (ImageButton) findViewById(R.id.viewcost);
+		viewNote = (ImageButton) findViewById(R.id.viewnote);
+		time = (TextView) findViewById(R.id.time);
+		processSeekBar = (SeekBar) findViewById(R.id.playProcess);
+		viewInformation.setOnClickListener(this);
+		playTrip.setOnClickListener(this);
+		stopTrip.setOnClickListener(this);
+		fastforward.setOnClickListener(this);
+		slowforward.setOnClickListener(this);
+		switchMapMode.setOnClickListener(this);
+		showBar.setOnClickListener(this);
+		viewGraph.setOnClickListener(this);
+		viewCost.setOnClickListener(this);
+		viewNote.setOnClickListener(this);
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		if (gmap == null) {
+			gmap = mapFragment.getMap();
+			gmap.setMyLocationEnabled(true);
+			gmap.setOnInfoWindowClickListener(this);
+			gmap.setOnMapLongClickListener(this);
+			gmap.setOnMarkerDragListener(this);
+			if (trip != null)
+				setPOIs();
+		}
+		if (playRunnable != null) {
+			playRunnable.onResume();
+		}
+	}
+
+	@Override
+	public void onPause() {
+		if (playRunnable != null) {
+			playRunnable.onPause();
+		}
+		super.onPause();
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.activity_view_map, menu);
+		search = (SearchView) menu.findItem(R.id.searchviewmap).getActionView();
+		search.setQueryHint(getString(R.string.search_poi));
+		search.setOnQueryTextListener(new OnQueryTextListener() {
+
+			public boolean onQueryTextSubmit(String query) {
+				// TODO Auto-generated method stub
+				InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+				imm.hideSoftInputFromWindow(search.getWindowToken(), 0);
+				search.clearFocus();
+				final String searchname = search.getQuery().toString();
+				if (!searchname.equals("")) {
+					final ArrayList<Marker> founds = new ArrayList<Marker>();
+					final int markersSize = markers.size();
+					for (int i = 0; i < markersSize; i++) {
+						if (markers.get(i).getTitle().contains(searchname)) {
+							founds.add(markers.get(i));
+						}
+					}
+					if (founds.size() == 0) {
+						Toast.makeText(ViewMapActivity.this, getString(R.string.poi_not_found), Toast.LENGTH_SHORT).show();
+					} else if (founds.size() == 1) {
+						gmap.animateCamera(CameraUpdateFactory.newLatLng(founds.get(0).getPosition()));
+						founds.get(0).showInfoWindow();
+					} else {
+						AlertDialog.Builder choose = new AlertDialog.Builder(ViewMapActivity.this);
+						choose.setTitle(getString(R.string.choose_the_poi));
+						String[] foundsname = new String[founds.size()];
+						for (int j = 0; j < founds.size(); j++) {
+							foundsname[j] = founds.get(j).getTitle();
+						}
+						choose.setSingleChoiceItems(foundsname, -1, new DialogInterface.OnClickListener() {
+
+							public void onClick(DialogInterface dialog, int which) {
+								// TODO Auto-generated method stub
+								gmap.animateCamera(CameraUpdateFactory.newLatLng(founds.get(which).getPosition()));
+								founds.get(which).showInfoWindow();
+								dialog.dismiss();
+							}
+						});
+						choose.show();
+					}
+				}
+				return false;
+			}
+
+			public boolean onQueryTextChange(String newText) {
+				// TODO Auto-generated method stub
+				return false;
+			}
+		});
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		if (item.getItemId() == android.R.id.home) {
+			ViewMapActivity.this.finish();
+		} else if (item.getItemId() == R.id.clearcache) {
+			if (trip != null) {
+				trip.deleteCache();
+				Toast.makeText(ViewMapActivity.this, getString(R.string.cache_has_been_cleared), Toast.LENGTH_SHORT).show();
+				EasyTracker.getInstance(ViewMapActivity.this).send(MapBuilder.createEvent("Trip", "clear_cache", trip.dir.getName(), null).build());
+			}
+		} else if (item.getItemId() == R.id.streetview) {
+			if (PackageHelper.isAppInstalled(ViewMapActivity.this, PackageHelper.StreetViewPackageNmae)) {
+				final RelativeLayout mapLayout = (RelativeLayout) findViewById(R.id.maplayout);
+				final ImageButton streetman = new ImageButton(ViewMapActivity.this);
+				streetman.setImageResource(R.drawable.ic_streetman);
+				streetman.setBackgroundColor(Color.TRANSPARENT);
+				RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+				params.addRule(RelativeLayout.CENTER_IN_PARENT);
+				mapLayout.addView(streetman, params);
+				streetman.setOnClickListener(new OnClickListener() {
+
+					public void onClick(View v) {
+						// TODO Auto-generated method stub
+						mapLayout.removeView(streetman);
+						LatLng latlng = gmap.getCameraPosition().target;
+						Uri uri = Uri.parse("google.streetview:cbll=" + String.valueOf(latlng.latitude) + "," + String.valueOf(latlng.longitude));
+						Intent intent2 = new Intent(Intent.ACTION_VIEW, uri);
+						if (intent2.resolveActivity(getPackageManager()) != null) {
+							ViewMapActivity.this.startActivity(intent2);
+						} else {
+							Toast.makeText(ViewMapActivity.this, getString(R.string.street_view_is_not_available), Toast.LENGTH_SHORT).show();
+						}
+					}
+				});
+				Toast.makeText(ViewMapActivity.this, getString(R.string.explain_how_to_use_street_view), Toast.LENGTH_LONG).show();
+				EasyTracker.getInstance(ViewMapActivity.this).send(MapBuilder.createEvent("Trip", "streetview", trip.dir.getName(), null).build());
+			} else {
+				PackageHelper.askForInstallApp(ViewMapActivity.this, PackageHelper.StreetViewPackageNmae, getString(R.string.street_view));
+			}
+		} else if (item.getItemId() == R.id.viewall) {
+			AlertDialog.Builder ab = new AlertDialog.Builder(ViewMapActivity.this);
+			ab.setTitle(getString(R.string.explorer_all___));
+			String[] modes = new String[] { getString(R.string.diary), getString(R.string.photo), getString(R.string.video), getString(R.string.sound) };
+			ab.setSingleChoiceItems(modes, -1, new DialogInterface.OnClickListener() {
+
+				public void onClick(DialogInterface dialog, int which) {
+					// TODO Auto-generated method stub
+					Intent intent = new Intent(ViewMapActivity.this, ViewAllActivity.class);
+					intent.putExtra(ViewAllActivity.tag_mode, which);
+					startActivity(intent);
+					dialog.dismiss();
+					EasyTracker.getInstance(ViewMapActivity.this).send(MapBuilder.createEvent("Trip", "view_all", trip.dir.getName(), null).build());
+				}
+			});
+			ab.show();
+		} else if (item.getItemId() == R.id.sharetrackby) {
+			AlertDialog.Builder ab = new AlertDialog.Builder(ViewMapActivity.this);
+			ab.setTitle(getString(R.string.share_track_by___));
+			String[] bys = new String[] { getString(R.string.gpx), getString(R.string.kml), getString(R.string.Hyperlink), getString(R.string.app_name) };
+			ab.setSingleChoiceItems(bys, -1, new DialogInterface.OnClickListener() {
+
+				public void onClick(DialogInterface dialog, int which) {
+					// TODO Auto-generated method stub
+					switch (which) {
+					case 0:
+						Intent intent = new Intent(Intent.ACTION_SEND);
+						intent.setType("application/gpx+xml");
+						intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(trip.gpxFile));
+						ViewMapActivity.this.startActivity(intent);
+						EasyTracker.getInstance(ViewMapActivity.this).send(MapBuilder.createEvent("Trip", "share_track_by_gpx", trip.dir.getName(), null).build());
+						break;
+					case 1:
+						AlertDialog.Builder ab = new AlertDialog.Builder(ViewMapActivity.this);
+						ab.setTitle(getString(R.string.share_track_kml));
+						final EditText filepath = new EditText(ViewMapActivity.this);
+						filepath.setText(path + "/" + name + "/" + name + ".kml");
+						ab.setView(filepath);
+						ab.setPositiveButton(getString(R.string.enter), new DialogInterface.OnClickListener() {
+
+							public void onClick(DialogInterface dialog, int which) {
+								// TODO Auto-generated method stub
+								File kmlFile = new File(filepath.getText().toString());
+								FileHelper.convertToKml(markers, lat, kmlFile, trip.note);
+								Intent intent = new Intent(Intent.ACTION_SEND);
+								intent.setType("application/vnd.google-earth.kml+xml");
+								intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(kmlFile));
+								ViewMapActivity.this.startActivity(intent);
+								EasyTracker.getInstance(ViewMapActivity.this).send(MapBuilder.createEvent("Trip", "share_track_by_kml", trip.dir.getName(), null).build());
+							}
+						});
+						ab.setNegativeButton(getString(R.string.cancel), null);
+						ab.show();
+						break;
+					case 2:
+						credential = GoogleAccountCredential.usingOAuth2(ViewMapActivity.this, DriveScopes.DRIVE);
+						startActivityForResult(credential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
+						break;
+					case 3:
+						Account[] accounts = AccountManager.get(ViewMapActivity.this).getAccountsByType(GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE);
+						if (accounts != null && accounts.length > 0) {
+							account = PreferenceManager.getDefaultSharedPreferences(ViewMapActivity.this).getString("account", accounts[0].name);
+							new GetAccessTokenTask().execute();
+						}
+						break;
+					}
+					dialog.dismiss();
+				}
+			});
+			ab.show();
+		} else if (item.getItemId() == R.id.importmemory) {
+			AlertDialog.Builder ab = new AlertDialog.Builder(ViewMapActivity.this);
+			ab.setTitle(getString(R.string.import_memory));
+			ab.setMessage(getString(R.string.import_memory_explanation));
+			ab.setPositiveButton(getString(R.string.enter), new DialogInterface.OnClickListener() {
+
+				public void onClick(DialogInterface dialog, int which) {
+					// TODO Auto-generated method stub
+					AlertDialog.Builder ab = new AlertDialog.Builder(ViewMapActivity.this);
+					ListView listView = new ListView(ViewMapActivity.this);
+					final DirAdapter adapter = new DirAdapter(ViewMapActivity.this, false, Environment.getExternalStorageDirectory());
+					listView.setAdapter(adapter);
+					listView.setOnItemClickListener(adapter);
+					ab.setTitle(getString(R.string.select_a_directory));
+					ab.setView(listView);
+					ab.setPositiveButton(getString(R.string.enter), new DialogInterface.OnClickListener() {
+
+						public void onClick(DialogInterface dialog, int which) {
+							// TODO Auto-generated method stub
+							EasyTracker.getInstance(ViewMapActivity.this).send(MapBuilder.createEvent("Trip", "import_memory", trip.dir.getName(), null).build());
+							new ImportMemoryTask(trip.dir, adapter.getRoot()).execute();
+						}
+					});
+					ab.setNegativeButton(getString(R.string.cancel), null);
+					ab.show();
+				}
+			});
+			ab.setNegativeButton(getString(R.string.cancel), null);
+			ab.show();
+		}
+		return false;
+	}
+
+	@Override
+	public void onConfigurationChanged(Configuration config) {
+		super.onConfigurationChanged(config);
+
+	}
+
+	class ImportMemoryTask extends AsyncTask<File, String, String> {
+
+		File tripFile;
+		File memory;
+		TextView message;
+		ProgressBar progress;
+		TextView progressMessage;
+		AlertDialog dialog;
+		boolean cancel = false;
+
+		public ImportMemoryTask(File trip, File memory) {
+			this.tripFile = trip;
+			this.memory = memory;
+
+		}
+
+		@Override
+		protected void onPreExecute() {
+			// TODO Auto-generated method stub
+			AlertDialog.Builder ab = new AlertDialog.Builder(ViewMapActivity.this);
+			ab.setTitle(getString(R.string.importing));
+			LinearLayout layout = (LinearLayout) getLayoutInflater().inflate(R.layout.progressdialog_import_memory, null);
+			message = (TextView) layout.findViewById(R.id.message);
+			progress = (ProgressBar) layout.findViewById(R.id.progressBar);
+			progressMessage = (TextView) layout.findViewById(R.id.progress);
+			ab.setView(layout);
+			ab.setNegativeButton(getString(R.string.cancel), new DialogInterface.OnClickListener() {
+
+				public void onClick(DialogInterface dialog, int which) {
+					// TODO Auto-generated method stub
+					cancel = true;
+				}
+			});
+			dialog = ab.create();
+			dialog.show();
+		}
+
+		@Override
+		protected String doInBackground(File... params) {
+			// TODO Auto-generated method stub
+			publishProgress("Sorting...", "0");
+			HashMap<Long, POI> pois = new HashMap<Long, POI>();
+			for (int i = 0; i < trip.pois.length; i++) {
+				Time time = trip.pois[i].time;
+				time.switchTimezone(trip.timezone);
+				pois.put(time.toMillis(true), trip.pois[i]);
+			}
+			Set<Long> set = pois.keySet();
+			Long[] poiTimes = set.toArray(new Long[0]);
+			Arrays.sort(poiTimes);
+			File[] memories = memory.listFiles(new FileFilter() {
+
+				public boolean accept(File pathname) {
+					// TODO Auto-generated method stub
+					if (pathname.isDirectory())
+						return false;
+					String mime = FileHelper.getMimeFromFile(pathname);
+					if (mime.startsWith("image") || mime.startsWith("video") || mime.startsWith("audio"))
+						return true;
+					return false;
+				}
+			});
+			publishProgress("setMax", String.valueOf(memories.length));
+			HashMap<Long, File> mems = new HashMap<Long, File>();
+			for (int i = 0; i < memories.length; i++) {
+				String mime = FileHelper.getMimeFromFile(memories[i]);
+				if (mime.equals("image/jpeg")) {
+					try {
+						ExifInterface exif = new ExifInterface(memories[i].getPath());
+						String datetime = exif.getAttribute(ExifInterface.TAG_DATETIME);
+						if (datetime != null) {
+							String date = datetime.split(" ")[0];
+							String time = datetime.split(" ")[1];
+							String[] dates = date.split(":");
+							String[] times = time.split(":");
+							Time time1 = new Time(trip.timezone);
+							time1.set(Integer.valueOf(times[2]), Integer.valueOf(times[1]), Integer.valueOf(times[0]), Integer.valueOf(dates[2]), Integer.valueOf(dates[1]) - 1, Integer.valueOf(dates[0]));
+							mems.put(time1.toMillis(false), memories[i]);
+							continue;
+						}
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				mems.put(memories[i].lastModified(), memories[i]);
+			}
+			set = mems.keySet();
+			Long[] memTimes = set.toArray(new Long[0]);
+			Arrays.sort(memTimes);
+			int key = 0;
+			long[] poisMiddleTime = new long[poiTimes.length - 1];
+			for (int i = 0; i < poisMiddleTime.length; i++) {
+				poisMiddleTime[i] = (poiTimes[i] + poiTimes[i + 1]) / 2;
+			}
+			boolean coppied = false;
+			for (int i = 0; i < memTimes.length; i++) {
+				if (cancel)
+					break;
+				for (int j = key; j < poisMiddleTime.length; j++) {
+					if (memTimes[i] <= poisMiddleTime[j]) {
+						File infile = mems.get(memTimes[i]);
+						String mime = FileHelper.getMimeFromFile(infile);
+						String path = "";
+						if (mime.startsWith("image"))
+							path = "pictures";
+						else if (mime.startsWith("video"))
+							path = "videos";
+						else if (mime.startsWith("audio"))
+							path = "audios";
+						publishProgress(infile.getName(), String.valueOf(i));
+						FileHelper.copyFile(infile, new File(pois.get(poiTimes[j]).dir.getPath() + "/" + path + "/" + infile.getName()));
+						key = j;
+						coppied = true;
+						break;
+					}
+				}
+				if (!coppied) {
+					File infile = mems.get(memTimes[i]);
+					String mime = FileHelper.getMimeFromFile(infile);
+					String path = "";
+					if (mime.startsWith("image"))
+						path = "pictures";
+					else if (mime.startsWith("video"))
+						path = "videos";
+					else if (mime.startsWith("audio"))
+						path = "audios";
+					publishProgress(infile.getName(), String.valueOf(i));
+					FileHelper.copyFile(infile, new File(pois.get(poiTimes[poiTimes.length - 1]).dir.getPath() + "/" + path + "/" + infile.getName()));
+				}
+				coppied = false;
+			}
+			return null;
+		}
+
+		@Override
+		protected void onProgressUpdate(String... values) {
+			// TODO Auto-generated method stub
+			if (values[0].equals("setMax")) {
+				progress.setMax(Integer.valueOf(values[1]));
+				progressMessage.setText("0/" + values[1]);
+			} else {
+				message.setText(values[0]);
+				progress.setProgress(Integer.valueOf(values[1]));
+				progressMessage.setText(values[1] + "/" + String.valueOf(progress.getMax()));
+			}
+		}
+
+		@Override
+		protected void onPostExecute(String result) {
+			// TODO Auto-generated method stub
+			dialog.dismiss();
+			trip.refreshPOIs();
+			AlertDialog.Builder ab = new AlertDialog.Builder(ViewMapActivity.this);
+			ab.setTitle(getString(R.string.finish));
+			ab.setMessage(getString(R.string.finish_import_memory));
+			ab.setPositiveButton(getString(R.string.enter), new DialogInterface.OnClickListener() {
+
+				public void onClick(DialogInterface dialog, int which) {
+					// TODO Auto-generated method stub
+					FileHelper.deletedir(memory.getPath());
+				}
+			});
+			ab.setNegativeButton(getString(R.string.cancel), null);
+			ab.show();
+		}
+	}
+
+	private void importGpx() {
+		Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+		i.setType("file/*");
+		Intent i2 = Intent.createChooser(i, getString(R.string.select_the_gpx));
+		startActivityForResult(i2, import_track);
+	}
+
+	private void updateAll() {
+		if (gmap != null && lat != null) {
+			gmap.clear();
+			gmap.addPolyline(new PolylineOptions().add(lat).width(5).color(trackColor));
+			setPOIs();
+		}
+	}
+
+	private void setPOIs() {
+		markers.clear();
+		trip.refreshPOIs();
+		for (int i = 0; i < trip.pois.length; i++) {
+			markers.add(gmap.addMarker(new MarkerOptions().position(new LatLng(trip.pois[i].latitude, trip.pois[i].longitude)).title(trip.pois[i].title).snippet(TimeAnalyzer.formatInTimezone(trip.pois[i].time, trip.timezone)).draggable(true)));
+		}
+		List<String> markerNames = new ArrayList<String>();
+		markerNames.add(getString(R.string.select_poi));
+		final int markersSize = markers.size();
+		for (int i = 0; i < markersSize; i++) {
+			markerNames.add(markers.get(i).getTitle());
+		}
+		SpinnerAdapter POIsAdapter = new ArrayAdapter<String>(ViewMapActivity.this, android.R.layout.simple_spinner_dropdown_item, markerNames);
+		getActionBar().setListNavigationCallbacks(POIsAdapter, new OnNavigationListener() {
+
+			public boolean onNavigationItemSelected(int itemPosition, long itemId) {
+				// TODO Auto-generated method stub
+				if (itemPosition > 0) {
+					itemPosition--;
+					gmap.animateCamera(CameraUpdateFactory.newLatLng(markers.get(itemPosition).getPosition()));
+					markers.get(itemPosition).showInfoWindow();
+				}
+				return true;
+			}
+		});
+	}
+
+	private void writeLocationToPoint(ArrayList<MyLatLng2> locus) {
+		ArrayList<Time> times = new ArrayList<Time>();
+		for (int i = 0; i < locus.size(); i++) {
+			Time time = TimeAnalyzer.getTime(trip.timezone, locus.get(i).time, TimeAnalyzer.type_self);
+			times.add(time);
+		}
+		for (int i = 0; i < trip.pois.length; i++) {
+			Time nowTime = new Time(Time.TIMEZONE_UTC);
+			nowTime.set(trip.pois[i].time);
+			nowTime.switchTimezone(trip.timezone);
+			Time previousTime = times.get(0);
+			Time nextTime = times.get(times.size() - 1);
+			if (TimeAnalyzer.isTimeMatched(previousTime, nowTime, nextTime)) {
+				for (int j = 0; j < times.size(); j++) {
+					nextTime = times.get(j);
+					if (TimeAnalyzer.isTimeMatched(previousTime, nowTime, nextTime)) {
+						trip.pois[i].updateBasicInformation(null, null, locus.get(j).getLatitude(), locus.get(j).getLongitude(), (double) locus.get(j).getAltitude());
+						break;
+					}
+					previousTime = nextTime;
+				}
+			}
+		}
+	}
+
+	class SetLocus extends AsyncTask<Integer, String, LatLng[]> {
+		int option;
+		ProgressDialog pd;
+
+		@Override
+		protected void onPreExecute() {
+			pd = new ProgressDialog(ViewMapActivity.this);
+			pd.setTitle(getString(R.string.initial_map));
+			pd.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+			pd.setMessage(getString(R.string.initial_map));
+			pd.setCancelable(true);
+			pd.setOnCancelListener(new OnCancelListener() {
+
+				public void onCancel(DialogInterface dialog) {
+					// TODO Auto-generated method stub
+					pd.dismiss();
+					ViewMapActivity.this.finish();
+				}
+			});
+			pd.show();
+		}
+
+		@Override
+		protected LatLng[] doInBackground(Integer... arg0) {
+			// TODO Auto-generated method stub
+			option = arg0[0];
+			trip = new Trip(ViewMapActivity.this, new File(path + "/" + name));
+			if (trip.cacheFile.exists()) {
+				publishProgress(getString(R.string.analysis_gpx));
+			} else {
+				publishProgress(getString(R.string.first_analysis_gpx));
+				trip.updateCacheFromGpxFile(ViewMapActivity.this, handler);
+				if (option == request_write_location_to_POI) {
+					if (trip.cache != null) {
+						publishProgress(getString(R.string.setup_pois));
+						writeLocationToPoint(trip.cache.lats);
+						// setPOIs();
+					} else {
+						Toast.makeText(ViewMapActivity.this, getString(R.string.gpx_doesnt_contain_time_information), Toast.LENGTH_LONG).show();
+					}
+				}
+				System.gc();
+			}
+			try {
+				final int latsSize = trip.cache.lats.size();
+				lat = new LatLng[latsSize];
+				for (int i = 0; i < latsSize; i++) {
+					MyLatLng2 latlng = trip.cache.lats.get(i);
+					lat[i] = new LatLng(latlng.getLatitude(), latlng.getLongitude());
+				}
+				System.gc();
+			} catch (Exception e) {
+				trip.cacheFile.delete();
+				e.printStackTrace();
+			}
+			return lat;
+		}
+
+		@Override
+		protected void onProgressUpdate(String... progress) {
+			pd.setMessage(progress[0]);
+		}
+
+		@Override
+		protected void onPostExecute(LatLng[] result) {
+			if (result != null && result.length > 0) {
+				setPOIs();
+				gmap.addPolyline(new PolylineOptions().add(result).width(5).color(trackColor));
+				gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(result[0], 16));
+			} else {
+				Toast.makeText(ViewMapActivity.this, getString(R.string.invalid_gpx_file), Toast.LENGTH_LONG).show();
+				if (option == request_write_location_to_POI) {
+					trip.deleteCache();
+				}
+			}
+			pd.dismiss();
+		}
+	}
+
+	public void onInfoWindowClick(Marker marker) {
+		// TODO Auto-generated method stub
+		String pointtitle = marker.getTitle();
+		if (new File(path + "/" + name + "/" + pointtitle).exists()) {
+			EasyTracker.getInstance(ViewMapActivity.this).send(MapBuilder.createEvent("Trip", "view_poi", trip.dir.getName() + "-" + pointtitle, null).build());
+			Intent intent = new Intent(ViewMapActivity.this, ViewPointActivity.class);
+			intent.putExtra("path", path + "/" + name + "/" + pointtitle);
+			intent.putExtra("request_code", update_request);
+			ViewMapActivity.this.startActivityForResult(intent, update_request);
+		}
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (data != null) {
+			Uri uri = data.getData();
+			switch (requestCode) {
+			case update_request:
+				if (data.getBooleanExtra("update", false)) {
+					updateAll();
+				}
+				break;
+			case import_track:
+				FileHelper.copyFile(new File(uri.getPath()), new File(path + "/" + name + "/" + name + ".gpx"));
+				new SetLocus().execute(request_write_location_to_POI);
+				break;
+			case REQUEST_ACCOUNT_PICKER:
+				if (resultCode == RESULT_OK && data != null && data.getExtras() != null) {
+					String accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+					if (accountName != null) {
+						credential.setSelectedAccountName(accountName);
+						Drive service = new Drive.Builder(AndroidHttp.newCompatibleTransport(), new GsonFactory(), credential).build();
+						new ExportTracktoDriveTask(new File(path + "/" + name + "/" + name + ".kml"), service).execute();
+					}
+				}
+				break;
+			case REQUEST_AUTHORIZATION:
+				if (resultCode == RESULT_OK) {
+					Drive service = new Drive.Builder(AndroidHttp.newCompatibleTransport(), new GsonFactory(), credential).build();
+					new ExportTracktoDriveTask(new File(path + "/" + name + "/" + name + ".kml"), service).execute();
+				} else {
+					startActivityForResult(credential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
+				}
+				break;
+			case REQUEST_GET_TOKEN:
+				if (resultCode == RESULT_OK) {
+					new GetAccessTokenTask().execute();
+				}
+				break;
+			}
+		}
+	}
+
+	public void onMapLongClick(final LatLng latlng) {
+		// TODO Auto-generated method stub
+		AlertDialog.Builder ab = new AlertDialog.Builder(ViewMapActivity.this);
+		ab.setTitle(getString(R.string.add_poi));
+		View layout = getLayoutInflater().inflate(R.layout.edit_poi, null);
+		ab.setView(layout);
+		final EditText edittitle = (EditText) layout.findViewById(R.id.edit_poi_title);
+		final EditText editlatitude = (EditText) layout.findViewById(R.id.edit_poi_latitude);
+		editlatitude.setText(String.valueOf(latlng.latitude));
+		final EditText editlongitude = (EditText) layout.findViewById(R.id.edit_poi_longitude);
+		editlongitude.setText(String.valueOf(latlng.longitude));
+		final EditText editaltitude = (EditText) layout.findViewById(R.id.edit_poi_altitude);
+		editaltitude.setText("0");
+		final DatePicker editdate = (DatePicker) layout.findViewById(R.id.edit_poi_date);
+		Calendar c = Calendar.getInstance();
+		editdate.updateDate(c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH));
+		final TimePicker edittime = (TimePicker) layout.findViewById(R.id.edit_poi_time);
+		edittime.setIs24HourView(true);
+		edittime.setCurrentHour(c.get(Calendar.HOUR_OF_DAY));
+		edittime.setCurrentMinute(c.get(Calendar.MINUTE));
+		ab.setPositiveButton(getString(R.string.enter), new DialogInterface.OnClickListener() {
+
+			public void onClick(DialogInterface dialog, int which) {
+				// TODO Auto-generated method stub
+				String title = edittitle.getText().toString();
+				LatLng location = new LatLng(Double.parseDouble(editlatitude.getText().toString()), Double.parseDouble(editlongitude.getText().toString()));
+				float altitude = Float.parseFloat(editaltitude.getText().toString());
+				Time time = new Time(Time.getCurrentTimezone());
+				time.set(0, edittime.getCurrentMinute(), edittime.getCurrentHour(), editdate.getDayOfMonth(), editdate.getMonth(), editdate.getYear());
+				time.switchTimezone(Time.TIMEZONE_UTC);
+				if (title.equals("")) {
+					Toast.makeText(getBaseContext(), getString(R.string.input_the_poi_title), Toast.LENGTH_LONG).show();
+				} else {
+					final String newPointPath = path + "/" + name + "/" + title;
+					File file = new File(newPointPath);
+					if (file.exists()) {
+						Toast.makeText(getApplicationContext(), getString(R.string.there_is_a_same_poi), Toast.LENGTH_LONG).show();
+					} else {
+						addPoint(newPointPath, location, altitude, time);
+					}
+				}
+			}
+		});
+		ab.setNegativeButton(getString(R.string.cancel), null);
+		ab.show();
+	}
+
+	private void addPoint(String newPointPath, LatLng latlng, float altitude, Time time) {
+		POI poi = new POI(new File(newPointPath));
+		poi.updateBasicInformation(null, time, latlng.latitude, latlng.longitude, (double) altitude);
+		updateAll();
+	}
+
+	public void onMarkerDrag(Marker marker) {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void onMarkerDragEnd(Marker marker) {
+		// TODO Auto-generated method stub
+		POI poi = new POI(new File(path + "/" + name + "/" + marker.getTitle()));
+		poi.updateBasicInformation(null, null, marker.getPosition().latitude, marker.getPosition().longitude, null);
+		updateAll();
+	}
+
+	public void onMarkerDragStart(Marker marker) {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void onClick(View v) {
+		// TODO Auto-generated method stub
+		if (v == null)
+			return;
+		if (v.equals(viewInformation)) {
+			AlertDialog.Builder ab = new AlertDialog.Builder(ViewMapActivity.this);
+			ab.setTitle(getString(R.string.statistics));
+			LinearLayout layout = (LinearLayout) getLayoutInflater().inflate(R.layout.map_view_basicinformation, null);
+			TextView starttime = (TextView) layout.findViewById(R.id.starttime);
+			starttime.setText(trip.cache.startTime);
+			TextView stoptime = (TextView) layout.findViewById(R.id.stoptime);
+			stoptime.setText(trip.cache.endTime);
+			TextView totaltime = (TextView) layout.findViewById(R.id.totaltime);
+			totaltime.setText(":" + trip.cache.totalTime);
+			TextView distance = (TextView) layout.findViewById(R.id.distance);
+			distance.setText(":" + String.valueOf(trip.cache.distance / 1000) + "km");
+			TextView avgspeed = (TextView) layout.findViewById(R.id.avgspeed);
+			avgspeed.setText(":" + String.valueOf(trip.cache.avgSpeed) + "km/hr");
+			TextView maxspeed = (TextView) layout.findViewById(R.id.maxspeed);
+			maxspeed.setText(":" + String.valueOf(trip.cache.maxSpeed) + "km/hr");
+			TextView totalclimb = (TextView) layout.findViewById(R.id.totalclimb);
+			totalclimb.setText(":" + String.valueOf(trip.cache.climb) + "m");
+			TextView maxaltitude = (TextView) layout.findViewById(R.id.maxaltitude);
+			maxaltitude.setText(":" + String.valueOf(trip.cache.maxAltitude));
+			TextView minaltitude = (TextView) layout.findViewById(R.id.minaltitude);
+			minaltitude.setText(":" + String.valueOf(trip.cache.minAltitude));
+			ab.setView(layout);
+			ab.setPositiveButton(getString(R.string.enter), null);
+			ab.show();
+			EasyTracker.getInstance(ViewMapActivity.this).send(MapBuilder.createEvent("Trip", "view_basicinformation", trip.dir.getName(), null).build());
+		} else if (v.equals(switchMapMode)) {
+			switch (gmap.getMapType()) {
+			case GoogleMap.MAP_TYPE_NORMAL:
+				gmap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+				break;
+			case GoogleMap.MAP_TYPE_SATELLITE:
+				gmap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+				break;
+			case GoogleMap.MAP_TYPE_HYBRID:
+				gmap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+				break;
+			case GoogleMap.MAP_TYPE_TERRAIN:
+				gmap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+				break;
+			default:
+				gmap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+				break;
+			}
+		} else if (v.equals(playTrip)) {
+			if (playRunnable == null) {
+				playTrip.setImageResource(R.drawable.ic_pause);
+				stopTrip.setVisibility(View.VISIBLE);
+				fastforward.setVisibility(View.VISIBLE);
+				slowforward.setVisibility(View.VISIBLE);
+				viewInformation.setVisibility(View.GONE);
+				viewGraph.setVisibility(View.GONE);
+				viewCost.setVisibility(View.GONE);
+				viewNote.setVisibility(View.GONE);
+				time.setVisibility(View.VISIBLE);
+				processSeekBar.setVisibility(View.VISIBLE);
+				BitmapFactory.Options option = new BitmapFactory.Options();
+				option.inJustDecodeBounds = true;
+				BitmapFactory.decodeResource(getResources(), R.drawable.runpoint, option);
+				playRunnable = new PlayRunnable(option.outWidth);
+				playThread = new Thread(playRunnable);
+				playThread.start();
+				EasyTracker.getInstance(ViewMapActivity.this).send(MapBuilder.createEvent("Trip", "play", trip.dir.getName(), null).build());
+			} else if (playRunnable.pause) {
+				playRunnable.onResume();
+			} else {
+				playRunnable.onPause();
+			}
+		} else if (v.equals(stopTrip)) {
+			if (playRunnable != null) {
+				playRunnable.onStop();
+			}
+		} else if (v.equals(showBar)) {
+			showAll = !showAll;
+			if (showAll) {
+				buttonBar.setVisibility(View.VISIBLE);
+				getActionBar().show();
+				WindowManager.LayoutParams attrs = getWindow().getAttributes();
+				attrs.flags &= (~WindowManager.LayoutParams.FLAG_FULLSCREEN);
+				getWindow().setAttributes(attrs);
+			} else {
+				buttonBar.setVisibility(View.GONE);
+				getActionBar().hide();
+				WindowManager.LayoutParams attrs = getWindow().getAttributes();
+				attrs.flags |= WindowManager.LayoutParams.FLAG_FULLSCREEN;
+				getWindow().setAttributes(attrs);
+			}
+			EasyTracker.getInstance(ViewMapActivity.this).send(MapBuilder.createEvent("Trip", "toggle_bar", trip.dir.getName(), null).build());
+		} else if (v.equals(fastforward)) {
+			if (playRunnable != null) {
+				playRunnable.changeForward(PlayRunnable.fast);
+			}
+		} else if (v.equals(slowforward)) {
+			if (playRunnable != null) {
+				playRunnable.changeForward(PlayRunnable.slow);
+			}
+		} else if (v.equals(viewGraph)) {
+			Intent intent = new Intent(Intent.ACTION_VIEW);
+			intent.setDataAndType(Uri.fromFile(trip.graphicFile), "image/*");
+			ViewMapActivity.this.startActivity(intent);
+			EasyTracker.getInstance(ViewMapActivity.this).send(MapBuilder.createEvent("Trip", "view_graph", trip.dir.getName(), null).build());
+		} else if (v.equals(viewCost)) {
+			Intent intent2 = new Intent(ViewMapActivity.this, ViewCostActivity.class);
+			intent2.putExtra("option", ViewCostActivity.optionTrip);
+			intent2.putExtra("path", trip.dir.getPath());
+			intent2.putExtra("title", trip.tripName);
+			startActivity(intent2);
+			EasyTracker.getInstance(ViewMapActivity.this).send(MapBuilder.createEvent("Trip", "view_cost", trip.dir.getName(), null).build());
+		} else if (v.equals(viewNote)) {
+			AlertDialog.Builder ab = new AlertDialog.Builder(ViewMapActivity.this);
+			ab.setTitle(getString(R.string.Note));
+			final String noteStr = trip.note;
+			TextView textView = new TextView(ViewMapActivity.this);
+			textView.setTextAppearance(ViewMapActivity.this, android.R.style.TextAppearance_Large);
+			textView.setText(noteStr);
+			int dip10 = (int) DeviceHelper.pxFromDp(ViewMapActivity.this, 10);
+			textView.setPadding(dip10, dip10, dip10, dip10);
+			ab.setView(textView);
+			ab.setPositiveButton(getString(R.string.enter), null);
+			ab.setNegativeButton(getString(R.string.edit), new DialogInterface.OnClickListener() {
+
+				public void onClick(DialogInterface dialog, int which) {
+					// TODO Auto-generated method stub
+					dialog.dismiss();
+					AlertDialog.Builder ab2 = new AlertDialog.Builder(ViewMapActivity.this);
+					ab2.setTitle(getString(R.string.edit) + " " + getString(R.string.Note));
+					final EditText editText = new EditText(ViewMapActivity.this);
+					editText.setText(noteStr);
+					ab2.setView(editText);
+					ab2.setPositiveButton(getString(R.string.enter), new DialogInterface.OnClickListener() {
+
+						public void onClick(DialogInterface dialog, int which) {
+							// TODO Auto-generated method stub
+							trip.updateNote(editText.getText().toString());
+						}
+					});
+					ab2.setNegativeButton(getString(R.string.cancel), null);
+					ab2.show();
+				}
+			});
+			ab.show();
+			EasyTracker.getInstance(ViewMapActivity.this).send(MapBuilder.createEvent("Trip", "view_note", trip.dir.getName(), null).build());
+		}
+	}
+
+	class PlayRunnable implements Runnable, OnSeekBarChangeListener {
+		private Object pauselock;
+		public boolean pause;
+		public boolean stop;
+		int pointSize;
+		MediaPlayer mp;
+		String title;
+		final int playMode = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(ViewMapActivity.this).getString("playingtripmode", "0"));
+		Marker playPoint;
+		LatLng[] markersPosition;
+		ImageView runPointImage;
+		float bearing;
+		final RelativeLayout mapLayout = (RelativeLayout) findViewById(R.id.maplayout);
+		final int markersSize = markers.size();
+		int i, add = 1;
+		int interval = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(ViewMapActivity.this).getString("playtripspeed", "10"));
+		boolean[] passed;
+		public static final int fast = 0;
+		public static final int slow = 1;
+
+		public PlayRunnable(int pointSize) {
+			pauselock = new Object();
+			pause = false;
+			stop = false;
+			this.pointSize = pointSize / 2;
+			processSeekBar.setMax(lat.length - 1);
+			processSeekBar.setOnSeekBarChangeListener(this);
+			markersPosition = new LatLng[markersSize];
+			for (int i = 0; i < markersSize; i++) {
+				markersPosition[i] = markers.get(i).getPosition();
+			}
+		}
+
+		public void onPause() {
+			synchronized (pauselock) {
+				pause = true;
+				playTrip.setImageResource(R.drawable.ic_play);
+			}
+		}
+
+		public void onResume() {
+			synchronized (pauselock) {
+				playTrip.setImageResource(R.drawable.ic_pause);
+				pause = false;
+				pauselock.notifyAll();
+			}
+		}
+
+		public void onStop() {
+			stop = true;
+			stopTrip.setVisibility(View.GONE);
+			fastforward.setVisibility(View.GONE);
+			slowforward.setVisibility(View.GONE);
+			viewInformation.setVisibility(View.VISIBLE);
+			viewGraph.setVisibility(View.VISIBLE);
+			viewCost.setVisibility(View.VISIBLE);
+			viewNote.setVisibility(View.VISIBLE);
+			time.setVisibility(View.GONE);
+			processSeekBar.setVisibility(View.GONE);
+			playTrip.setImageResource(R.drawable.ic_play);
+			handler.post(new Runnable() {
+
+				public void run() {
+					// TODO Auto-generated method stub
+					if (playPoint != null)
+						playPoint.remove();
+					if (playMode == playtriptype_skyview) {
+						mapLayout.removeView(runPointImage);
+					}
+					if (processSeekBar != null) {
+						mapLayout.removeView(processSeekBar);
+					}
+				}
+			});
+			if (mp != null) {
+				mp.stop();
+				mp.release();
+				mp = null;
+			}
+			playRunnable = null;
+			playThread = null;
+			System.gc();
+		}
+
+		private void resetPassed() {
+			for (int i = 0; i < passed.length; i++)
+				passed[i] = false;
+		}
+
+		public void changeForward(int option) {
+			switch (option) {
+			case fast:
+				if (interval == 1)
+					add *= 2;
+				else
+					interval /= 2;
+				break;
+			case slow:
+				if (add == 1)
+					interval *= 2;
+				else
+					add /= 2;
+				break;
+			default:
+				break;
+			}
+		}
+
+		public void run() {
+			// TODO Auto-generated method stub
+			mp = null;
+			if (PreferenceManager.getDefaultSharedPreferences(ViewMapActivity.this).getBoolean("playmusic", false)) {
+				String musicpath = PreferenceManager.getDefaultSharedPreferences(ViewMapActivity.this).getString("musicpath", "");
+				if (musicpath != "") {
+					File file = new File(musicpath);
+					if (file.exists() && file.isFile()) {
+						mp = MediaPlayer.create(ViewMapActivity.this, Uri.fromFile(file));
+						mp.setLooping(true);
+						mp.start();
+					}
+				}
+			}
+			handler.post(new Runnable() {
+
+				public void run() {
+					// TODO Auto-generated method stub
+					if (playMode == playtriptype_skyview) {
+						runPointImage = new ImageView(ViewMapActivity.this);
+						runPointImage.setImageResource(R.drawable.runpoint);
+						RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+						params.addRule(RelativeLayout.CENTER_IN_PARENT);
+						mapLayout.addView(runPointImage, params);
+					} else {
+						playPoint = gmap.addMarker(new MarkerOptions().position(lat[0]).icon(BitmapDescriptorFactory.fromResource(R.drawable.runpoint)).anchor((float) 0.5, (float) 0.5));
+					}
+				}
+
+			});
+			int latlength = lat.length;
+			passed = new boolean[markers.size()];
+			resetPassed();
+			for (i = 0; i < latlength; i += add) {
+				try {
+					Thread.sleep(interval);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				synchronized (pauselock) {
+					while (pause) {
+						try {
+							pauselock.wait();
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
+				if (stop)
+					break;
+				if (i >= lat.length || i >= trip.cache.lats.size())
+					break;
+				final LatLng position = lat[i];
+				processSeekBar.setProgress(i);
+				bearing += 0.05;
+				if (bearing > 360)
+					bearing = 0;
+				handler.post(new Runnable() {
+
+					public void run() {
+						// TODO Auto-generated method stub
+						if (i < trip.cache.lats.size()) {
+							String timeStr = trip.cache.lats.get(i).getTime();
+							if (timeStr != null) {
+								time.setText(timeStr);
+							}
+						}
+						if (playMode == playtriptype_skyview)
+							gmap.animateCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition(position, gmap.getCameraPosition().zoom, 90, bearing)), interval, null);
+						else
+							playPoint.setPosition(position);
+					}
+				});
+				for (int j = 0; j < markersSize; j++) {
+					final int index = j;
+					if (!passed[index] && Math.abs(position.latitude - markersPosition[index].latitude) <= 0.0001 && Math.abs(position.longitude - markersPosition[index].longitude) <= 0.0001) {
+						passed[index] = true;
+						Intent intent = new Intent(ViewMapActivity.this, PlayPointActivity.class);
+						synchronized (handler) {
+							handler.post(new Runnable() {
+
+								public void run() {
+									// TODO Auto-generated method stub
+									title = markers.get(index).getTitle();
+									markers.get(index).showInfoWindow();
+									synchronized (handler) {
+										handler.notifyAll();
+									}
+								}
+							});
+							try {
+								handler.wait();
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+						intent.putExtra("path", path + "/" + name + "/" + title);
+						passed[j] = true;
+						ViewMapActivity.this.startActivity(intent);
+					}
+				}
+			}
+			handler.post(new Runnable() {
+
+				public void run() {
+					// TODO Auto-generated method stub
+					if (playRunnable != null)
+						playRunnable.onStop();
+				}
+			});
+		}
+
+		public void onStopTrackingTouch(SeekBar seekBar) {
+			// TODO Auto-generated method stub
+			resetPassed();
+			playRunnable.onResume();
+		}
+
+		public void onStartTrackingTouch(SeekBar seekBar) {
+			// TODO Auto-generated method stub
+			playRunnable.onPause();
+		}
+
+		public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+			// TODO Auto-generated method stub
+			i = progress;
+			if (playMode == playtriptype_skyview)
+				gmap.animateCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition(lat[i], gmap.getCameraPosition().zoom, 90, bearing)), interval, null);
+			else
+				playPoint.setPosition(lat[i]);
+		}
+	}
+
+	class ExportTracktoDriveTask extends AsyncTask<String, String, String> {
+		ProgressDialog pd;
+		File kmlFile;
+		Drive service;
+
+		public ExportTracktoDriveTask(File kmlFile, Drive service) {
+			this.kmlFile = kmlFile;
+			this.service = service;
+			pd = new ProgressDialog(ViewMapActivity.this);
+			pd.setTitle(getString(R.string.processing));
+			EasyTracker.getInstance(ViewMapActivity.this).send(MapBuilder.createEvent("Trip", "share_track_by_hyperlink", trip.dir.getName(), null).build());
+		}
+
+		@Override
+		protected void onPostExecute(String result) {
+			// TODO Auto-generated method stub
+			pd.dismiss();
+			if (result != null) {
+				Intent intent = new Intent(Intent.ACTION_SEND);
+				intent.setType("text/plain");
+				intent.putExtra(Intent.EXTRA_TEXT, result);
+				startActivity(intent);
+			}
+		}
+
+		@Override
+		protected void onPreExecute() {
+			// TODO Auto-generated method stub
+			pd.setMessage(getString(R.string.generating_kml_file));
+			pd.show();
+			FileHelper.convertToKml(markers, lat, kmlFile, trip.note);
+		}
+
+		@Override
+		protected void onProgressUpdate(String... values) {
+			// TODO Auto-generated method stub
+			pd.setMessage(values[0]);
+		}
+
+		@Override
+		protected String doInBackground(String... params) {
+			// TODO Auto-generated method stub
+			publishProgress(getString(R.string.uploading_to_google_drive));
+			FileContent mediaContent = new FileContent("application/vnd.google-earth.kml+xml", kmlFile);
+			com.google.api.services.drive.model.File body = new com.google.api.services.drive.model.File();
+			body.setTitle(kmlFile.getName());
+			body.setMimeType("application/vnd.google-earth.kml+xml");
+			try {
+				com.google.api.services.drive.model.File file = service.files().insert(body, mediaContent).execute();
+				if (file != null) {
+					publishProgress(getString(R.string.making_the_file_public));
+					String fileId = file.getId();
+					String link = file.getAlternateLink();
+					Permission newPermission = new Permission();
+					newPermission.setValue("");
+					newPermission.setRole("reader");
+					newPermission.setType("anyone");
+					service.permissions().insert(fileId, newPermission).execute();
+					publishProgress(getString(R.string.generating_hyper_link));
+					return link;
+				}
+			} catch (UserRecoverableAuthIOException e) {
+				startActivityForResult(e.getIntent(), REQUEST_AUTHORIZATION);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return null;
+		}
+
+	}
+
+	class GetAccessTokenTask extends AsyncTask<String, String, String> {
+
+		@Override
+		protected String doInBackground(String... params) {
+			// TODO Auto-generated method stub
+			try {
+				token = GoogleAuthUtil.getToken(ViewMapActivity.this, account, "oauth2:https://www.googleapis.com/auth/userinfo.email");
+				Intent intent = new Intent(ViewMapActivity.this, SendTripService.class);
+				intent.putExtra(SendTripService.filePathTag, trip.dir.getPath());
+				intent.putExtra(SendTripService.accountTag, account);
+				intent.putExtra(SendTripService.tokenTag, token);
+				startService(intent);
+				EasyTracker.getInstance(ViewMapActivity.this).send(MapBuilder.createEvent("Trip", "share_track_by_tripdiary", trip.dir.getName(), null).build());
+			} catch (UserRecoverableAuthException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				startActivityForResult(e.getIntent(), REQUEST_GET_TOKEN);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (GoogleAuthException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return null;
+		}
+
+	}
+
+	@Override
+	protected void onDestroy() {
+		// TODO Auto-generated method stub
+		trip = null;
+		super.onDestroy();
+	}
+
+	@Override
+	protected void onStart() {
+		// TODO Auto-generated method stub
+		super.onStart();
+		EasyTracker.getInstance(this).activityStart(this);
+	}
+
+	@Override
+	protected void onStop() {
+		// TODO Auto-generated method stub
+		super.onStop();
+		EasyTracker.getInstance(this).activityStop(this);
+	}
+
+}

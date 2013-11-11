@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/delete"
+        android:title="@string/delete"
+        android:orderInCategory="100"
+        android:icon="@drawable/ic_delete"
+        android:showAsAction="ifRoom"
+         />
+    <item android:id="@+id/share"
+        android:title="@string/share"
+        android:orderInCategory="100"
+        android:showAsAction="ifRoom"
+        android:actionProviderClass="android.widget.ShareActionProvider" />
+    <item android:id="@+id/rename"
+        android:title="@string/rename"
+        android:orderInCategory="100"
+        android:icon="@drawable/ic_rename"
+        android:showAsAction="ifRoom"
+        />
+    <item android:id="@+id/selectall"
+        android:title="@string/select_all"
+        android:orderInCategory="100"
+        android:icon="@drawable/ic_check"
+        android:showAsAction="ifRoom"
+        />
+
+</menu>

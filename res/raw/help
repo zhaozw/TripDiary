@@ -1,0 +1,11 @@
+This application is used to record your trip by making a track and some POIs.Each trip contains many POIs.And Each POI contains pictures、videos、audios and diary.You can view your trip in Google Map,even play it.Have fun!!
+
+Here are some tips:
+
+1.If you want to continue a trip that has been stopped,you can just click "start trip" and input the same name.But you must enable GPS this time,or you need to edit gpx file for importing track by yourself.
+
+2.You can use another device to record the track and use the phone to record POIs in order to save phone battery.But the device must support gpx and can record time.The program will lead you to import the gpx file.
+
+3.You can just enter /sdcard/TripDiary/ to manage or backup your trips in advanced.Purpose of every folders and files is specified by its name.You can change anything you want.But all are on your own risk.
+
+4.Do not use task killer during the trip,or you will need to continue the trip by yourself.

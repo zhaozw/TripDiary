@@ -1,0 +1,18 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/importtrip"
+        android:title="@string/import_trip_with_gpx"
+        android:orderInCategory="100"
+        android:showAsAction="never" />
+    <item android:id="@+id/restoretrip"
+        android:title="@string/restore_trip"
+        android:orderInCategory="100"
+        android:showAsAction="never" />
+    <item android:id="@+id/searchview"
+        android:title=""
+        android:icon="@drawable/ic_search"
+        android:orderInCategory="100"
+        android:showAsAction="ifRoom|collapseActionView" 
+        android:actionViewClass="android.widget.SearchView"/>
+    
+    
+</menu>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <Button
+        android:id="@+id/diary"
+        android:layout_width="wrap_content"
+        android:layout_height="0dip"
+        android:layout_weight="1"
+        android:drawableLeft="@drawable/ic_taketext"
+        android:text="@string/diary"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_gravity="center"
+         />
+
+    <Button
+        android:id="@+id/photo"
+        android:layout_width="wrap_content"
+        android:layout_height="0dip"
+        android:layout_weight="1"
+        android:drawableLeft="@drawable/ic_takepicture"
+        android:text="@string/photo"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_gravity="center"/>
+
+    <Button
+        android:id="@+id/video"
+        android:layout_width="wrap_content"
+        android:layout_height="0dip"
+        android:layout_weight="1"
+        android:drawableLeft="@drawable/ic_takevideo" 
+        android:text="@string/video"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_gravity="center"/>
+
+    <Button
+        android:id="@+id/audio"
+        android:layout_width="wrap_content"
+        android:layout_height="0dip"
+        android:layout_weight="1"
+        android:drawableLeft="@drawable/ic_takeaudio"
+        android:text="@string/sound" 
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_gravity="center"/>
+
+</LinearLayout>

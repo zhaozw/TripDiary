@@ -1,0 +1,36 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/importpicture"
+        android:title="@string/import_a_picture"
+        android:orderInCategory="100"
+        android:showAsAction="never" />
+    <item android:id="@+id/importvideo"
+        android:title="@string/import_a_video"
+        android:orderInCategory="100"
+        android:showAsAction="never" />
+    <item android:id="@+id/importaudio"
+        android:title="@string/import_a_audio"
+        android:orderInCategory="100"
+        android:showAsAction="never" />
+    <item android:id="@+id/editdiary"
+        android:title="@string/edit_diary"
+        android:orderInCategory="100"
+        android:showAsAction="never" />
+    <item android:id="@+id/playpoint"
+        android:title="@string/play"
+        android:orderInCategory="100"
+        android:icon="@drawable/ic_resume"
+        android:showAsAction="never" />
+    <item android:id="@+id/viewbasicinformation"
+        android:title=""
+        android:orderInCategory="100"
+        android:icon="@drawable/ic_file"
+        android:showAsAction="ifRoom" />
+    <item android:id="@+id/viewcost"
+        android:title=""
+        android:orderInCategory="100"
+        android:icon="@drawable/ic_money"
+        android:showAsAction="ifRoom" />
+    
+    
+</menu>
+
