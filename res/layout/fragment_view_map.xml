@@ -1,0 +1,133 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ViewMapActivity" >
+
+    <RelativeLayout
+        android:id="@+id/maplayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/buttonbar" >
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_above="@+id/playProcess"
+        android:textColor="#0000FF"
+        android:visibility="gone"
+        android:textAppearance="@android:style/TextAppearance.Large" />
+    <SeekBar 
+        android:id="@+id/playProcess"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/buttonbar"
+        android:visibility="gone"
+        />
+
+    <LinearLayout
+        android:id="@+id/buttonbar"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal" >
+
+        <ImageButton
+            android:id="@+id/viewcost"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/imagebutton_description"
+            android:src="@drawable/ic_money" />
+
+        <ImageButton
+            android:id="@+id/viewnote"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/imagebutton_description"
+            android:src="@drawable/ic_note" />
+
+        <ImageButton
+            android:id="@+id/viewgraph"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/imagebutton_description"
+            android:src="@drawable/ic_line_chart" />
+
+        <ImageButton
+            android:id="@+id/viewinformation"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/imagebutton_description"
+            android:src="@drawable/ic_file" />
+
+        <ImageButton
+            android:id="@+id/switchmapmode"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/imagebutton_description"
+            android:src="@drawable/ic_switch" />
+
+        <ImageButton
+            android:id="@+id/slowforward"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/imagebutton_description"
+            android:src="@drawable/ic_slowforward"
+            android:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/playtrip"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/imagebutton_description"
+            android:src="@drawable/ic_play" />
+
+        <ImageButton
+            android:id="@+id/fastforward"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/imagebutton_description"
+            android:src="@drawable/ic_fastforward"
+            android:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/stoptrip"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/imagebutton_description"
+            android:src="@drawable/ic_stop"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/showbar"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:contentDescription="@string/imagebutton_description"
+        android:src="@drawable/ic_show" />
+
+</RelativeLayout>

@@ -166,7 +166,7 @@ public class ViewPointActivity extends Activity {
 			TextView altitude = (TextView) layout.findViewById(R.id.altitude);
 			altitude.setText(String.valueOf(poi.altitude) + "m");
 			TextView time = (TextView) layout.findViewById(R.id.time);
-			time.setText(TimeAnalyzer.formatInTimezone(poi.time, ViewMapActivity.trip.timezone));
+			time.setText(TimeAnalyzer.formatInTimezone(poi.time, ViewTripActivity.trip.timezone));
 			ab.setView(layout);
 			ab.setPositiveButton(getString(R.string.edit), new DialogInterface.OnClickListener() {
 
@@ -186,7 +186,7 @@ public class ViewPointActivity extends Activity {
 					final DatePicker editdate = (DatePicker) layout.findViewById(R.id.edit_poi_date);
 					final TimePicker edittime = (TimePicker) layout.findViewById(R.id.edit_poi_time);
 					Time time = poi.time;
-					time.switchTimezone(ViewMapActivity.trip.timezone);
+					time.switchTimezone(ViewTripActivity.trip.timezone);
 					editdate.updateDate(time.year, time.month, time.monthDay);
 					edittime.setIs24HourView(true);
 					edittime.setCurrentHour(time.hour);
@@ -197,7 +197,7 @@ public class ViewPointActivity extends Activity {
 
 						public void onClick(DialogInterface dialog, int which) {
 							// TODO Auto-generated method stub
-							Time time = new Time(ViewMapActivity.trip.timezone);
+							Time time = new Time(ViewTripActivity.trip.timezone);
 							time.set(0, edittime.getCurrentMinute(), edittime.getCurrentHour(), editdate.getDayOfMonth(), editdate.getMonth(), editdate.getYear());
 							time.switchTimezone(Time.TIMEZONE_UTC);
 							poi.renamePOI(edittitle.getText().toString());

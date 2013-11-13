@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import com.yupog2003.tripdiary.R;
-import com.yupog2003.tripdiary.ViewAllActivity;
+import com.yupog2003.tripdiary.ViewTripActivity;
 import com.yupog2003.tripdiary.data.POI;
 
 import android.app.Fragment;
@@ -24,7 +24,7 @@ public class AllAudioFragment extends Fragment{
 	POI[] pois;
 	ExpandableListView listView;
 	public AllAudioFragment(){
-		this.pois=ViewAllActivity.trip.pois;
+		this.pois=ViewTripActivity.trip.pois;
 	}
 	
 	@Override

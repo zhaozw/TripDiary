@@ -3,7 +3,7 @@ package com.yupog2003.tripdiary.fragments;
 import java.io.File;
 
 import com.yupog2003.tripdiary.R;
-import com.yupog2003.tripdiary.ViewAllActivity;
+import com.yupog2003.tripdiary.ViewTripActivity;
 import com.yupog2003.tripdiary.data.DeviceHelper;
 import com.yupog2003.tripdiary.data.POI;
 import com.yupog2003.tripdiary.views.UnScrollableGridView;
@@ -34,7 +34,7 @@ public class AllVideoFragment extends Fragment{
 	ExpandableListView listView;
 	int width;
 	public AllVideoFragment(){
-		this.pois=ViewAllActivity.trip.pois;
+		this.pois=ViewTripActivity.trip.pois;
 	}
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,

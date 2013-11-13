@@ -63,12 +63,6 @@ public class Trip {
 			}
 		}
 		refreshPOIs();
-		try{
-			this.cache=(TrackCache)FileHelper.readObjectFromFile(cacheFile);
-		}catch(Exception e){
-			this.cache=null;
-			e.printStackTrace();
-		}
 		
 		try {
 			BufferedReader br=new BufferedReader(new FileReader(noteFile));
@@ -89,6 +83,14 @@ public class Trip {
 		SharedPreferences p=context.getSharedPreferences("trip", Context.MODE_PRIVATE);
 		category=p.getString(tripName, "nocategory");
 		timezone=TimeAnalyzer.getTripTimeZone(context, tripName);
+	}
+	public void getCache(){
+		try{
+			this.cache=(TrackCache)FileHelper.readObjectFromFile(cacheFile);
+		}catch(Exception e){
+			this.cache=null;
+			e.printStackTrace();
+		}
 	}
 	public void deleteCache(){
 		cacheFile.delete();

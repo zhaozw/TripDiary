@@ -19,8 +19,8 @@ import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.yupog2003.tripdiary.R;
+import com.yupog2003.tripdiary.ViewTripActivity;
 import com.yupog2003.tripdiary.services.SendTripService;
-import com.yupog2003.tripdiary.ViewMapActivity;
 import com.yupog2003.tripdiary.data.ColorHelper;
 import com.yupog2003.tripdiary.data.FileHelper;
 import com.yupog2003.tripdiary.data.TimeAnalyzer;
@@ -382,7 +382,7 @@ public class LocalTripsFragment extends Fragment {
 				listView.setItemChecked(position, !listView.isItemChecked(position));
 			} else {
 				String name = trips.get(groupPosition).get(childPosition).file.getName();
-				Intent i = new Intent(getActivity(), ViewMapActivity.class);
+				Intent i = new Intent(getActivity(), ViewTripActivity.class);
 				i.putExtra("path", path);
 				i.putExtra("name", name);
 				EasyTracker.getInstance(getActivity()).send(MapBuilder.createEvent("Trip", "view", name, null).build());
@@ -598,7 +598,7 @@ public class LocalTripsFragment extends Fragment {
 					Toast.makeText(getActivity(), getString(R.string.trip_not_found), Toast.LENGTH_SHORT).show();
 				} else if (founds.size() == 1) {
 					String name = founds.get(0);
-					Intent intent = new Intent(getActivity(), ViewMapActivity.class);
+					Intent intent = new Intent(getActivity(), ViewTripActivity.class);
 					intent.putExtra("path", path);
 					intent.putExtra("name", name);
 					getActivity().startActivity(intent);
@@ -610,7 +610,7 @@ public class LocalTripsFragment extends Fragment {
 						public void onClick(DialogInterface dialog, int which) {
 							// TODO Auto-generated method stub
 							String name = founds.get(which);
-							Intent intent = new Intent(getActivity(), ViewMapActivity.class);
+							Intent intent = new Intent(getActivity(), ViewTripActivity.class);
 							intent.putExtra("path", path);
 							intent.putExtra("name", name);
 							dialog.dismiss();

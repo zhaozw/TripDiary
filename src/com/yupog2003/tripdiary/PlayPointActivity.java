@@ -30,6 +30,7 @@ import com.yupog2003.tripdiary.R;
 import com.yupog2003.tripdiary.data.DeviceHelper;
 import com.yupog2003.tripdiary.data.POI;
 import com.yupog2003.tripdiary.data.TimeAnalyzer;
+import com.yupog2003.tripdiary.fragments.ViewMapFragment;
 
 public class PlayPointActivity extends Activity implements View.OnClickListener{
 	POI poi;
@@ -76,7 +77,7 @@ public class PlayPointActivity extends Activity implements View.OnClickListener{
 		next=(ImageButton)findViewById(R.id.next);
 		next.setOnClickListener(this);
 		handler=new Handler();
-		setTitle(name+TimeAnalyzer.formatInTimezone(poi.time, ViewMapActivity.trip.timezone));
+		setTitle(name+TimeAnalyzer.formatInTimezone(poi.time, ViewTripActivity.trip.timezone));
 		new PrepareViewsTask().execute("");
 	}
 

@@ -290,5 +290,7 @@
     <string name="login">Login</string>
     <string name="account">Account</string>
     <string name="upload">Upload</string>
+    <string name="title_activity_view_trip">ViewTripActivity</string>
+    <string name="map">Map</string>
 
 </resources>

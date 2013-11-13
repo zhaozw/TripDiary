@@ -1,0 +1,31 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/searchviewmap"
+        android:actionViewClass="android.widget.SearchView"
+        android:icon="@drawable/ic_search"
+        android:orderInCategory="100"
+        android:showAsAction="ifRoom|collapseActionView"
+        android:title=""/>
+    <item
+        android:id="@+id/clearcache"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/clear_cache"/>
+    <item
+        android:id="@+id/sharetrackby"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/share_track_by..."/>
+    <item
+        android:id="@+id/importmemory"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/import_memory"/>
+    <item
+        android:id="@+id/streetview"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/streetview"/>
+
+</menu>

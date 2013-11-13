@@ -5,7 +5,7 @@ import java.io.File;
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.yupog2003.tripdiary.R;
-import com.yupog2003.tripdiary.ViewAllActivity;
+import com.yupog2003.tripdiary.ViewTripActivity;
 import com.yupog2003.tripdiary.data.DeviceHelper;
 import com.yupog2003.tripdiary.data.POI;
 import com.yupog2003.tripdiary.views.UnScrollableGridView;
@@ -35,7 +35,7 @@ public class AllPictureFragment extends Fragment{
 	int numColums;
 	DisplayImageOptions options;
 	public AllPictureFragment(){
-		this.pois=ViewAllActivity.trip.pois;
+		this.pois=ViewTripActivity.trip.pois;
 		options=new DisplayImageOptions.Builder()
 		.cacheInMemory(true)
 		.cacheOnDisc(false)

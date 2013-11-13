@@ -60,7 +60,7 @@
             android:label="@string/title_activity_add_point" >
         </activity>
 
-        <service android:name="com.yupog2003.tripdiary.RecordService" >
+        <service android:name="com.yupog2003.tripdiary.services.RecordService" >
         </service>
 
         <activity
@@ -85,11 +85,6 @@
             android:label="@string/title_activity_category" >
         </activity>
         <activity
-            android:name="com.yupog2003.tripdiary.ViewMapActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="@string/title_activity_view_map" >
-        </activity>
-        <activity
             android:name="com.yupog2003.tripdiary.PaintActivity"
             android:label="@string/title_activity_paint" >
         </activity>
@@ -105,15 +100,18 @@
             android:value="AIzaSyBhpyozA58LqjJu-koEYgDqsYwmdHuZWr4" />
         <!-- publish key=  AIzaSyCv_ahGgT46nBio7n4UpViFrxsUUZ98DUE -->
         <!-- debug key=    AIzaSyBhpyozA58LqjJu-koEYgDqsYwmdHuZWr4 -->
-        <activity
-            android:name="com.yupog2003.tripdiary.ViewAllActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize" >
-        </activity>
+        
 
         <service android:name="com.yupog2003.tripdiary.services.SendTripService" >
         </service>
         <service android:name="com.yupog2003.tripdiary.services.DownloadTripService" >
         </service>
+
+        <activity
+            android:name="com.yupog2003.tripdiary.ViewTripActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="@string/title_activity_view_trip" >
+        </activity>
     </application>
 
 </manifest>

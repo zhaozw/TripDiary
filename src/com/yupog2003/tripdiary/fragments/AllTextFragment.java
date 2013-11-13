@@ -3,7 +3,7 @@ package com.yupog2003.tripdiary.fragments;
 import java.io.File;
 
 import com.yupog2003.tripdiary.R;
-import com.yupog2003.tripdiary.ViewAllActivity;
+import com.yupog2003.tripdiary.ViewTripActivity;
 import com.yupog2003.tripdiary.data.POI;
 
 import android.app.Fragment;
@@ -23,7 +23,7 @@ public class AllTextFragment extends Fragment{
 	POI[] pois;
 	ExpandableListView listView;
 	public AllTextFragment(){
-		this.pois=ViewAllActivity.trip.pois;
+		this.pois=ViewTripActivity.trip.pois;
 	}
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,

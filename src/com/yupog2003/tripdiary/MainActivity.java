@@ -20,6 +20,7 @@ import com.yupog2003.tripdiary.data.ColorHelper;
 import com.yupog2003.tripdiary.data.PackageHelper;
 import com.yupog2003.tripdiary.data.TimeAnalyzer;
 import com.yupog2003.tripdiary.data.Trip;
+import com.yupog2003.tripdiary.services.RecordService;
 
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -208,7 +209,7 @@ public class MainActivity extends Activity implements Button.OnClickListener {
 			i2.putExtra("isgpsenabled", false);
 			PendingIntent pi = PendingIntent.getActivity(MainActivity.this, 0, i2, PendingIntent.FLAG_UPDATE_CURRENT);
 			nb.addAction(R.drawable.poi, getString(R.string.add_poi), pi);
-			Intent i3 = new Intent(MainActivity.this, ViewMapActivity.class);
+			Intent i3 = new Intent(MainActivity.this, ViewTripActivity.class);
 			i3.putExtra("name", name);
 			i3.putExtra("path", rootPath);
 			i3.putExtra("stoptrip", true);
