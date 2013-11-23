@@ -30,9 +30,9 @@
 
     <Button
         android:id="@+id/viewhistory"
-        android:layout_width="wrap_content"
+        android:layout_width="0dip"
         android:layout_height="match_parent"
-        android:layout_weight="0.25"
+        android:layout_weight="1"
         android:text="@string/History" 
         android:textSize="50sp"
         style="?android:attr/borderlessButtonStyle"

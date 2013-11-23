@@ -87,6 +87,7 @@
     <string name="enter">Enter</string>
     <string name="cancel">Cancel</string>
     <string name="yes">Yes</string>
+    <string name="no">No</string>
     <string name="edit_category">Edit Category</string>
     <string name="cannot_edit_to_nocategory">Cannot edit to nocategory</string>
     <string name="cannot_edit_nocategory">Cannot edit nocategory</string>
@@ -285,12 +286,12 @@
     <string name="choose_an_action">Choose an action</string>
     <string name="download">Download</string>
     <string name="toggle_public">Toggle public</string>
-    <string name="rename">Rename</string>
-    <string name="delete">Delete</string>
     <string name="login">Login</string>
     <string name="account">Account</string>
     <string name="upload">Upload</string>
     <string name="title_activity_view_trip">ViewTripActivity</string>
     <string name="map">Map</string>
+    <string name="make_it_public">Make it public?</string>
+    <string name="make_it_public_to_share">Would you like to make the trip public in order to share with your friend?</string>
 
 </resources>

@@ -1,14 +1,5 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
-    <item android:id="@+id/expandall"
-        android:title="@string/expand_all"
-        android:orderInCategory="100"
-        android:icon="@drawable/ic_expand"
-        android:showAsAction="ifRoom" />
-    <item android:id="@+id/collapseall"
-        android:title="@string/collapse_all"
-        android:orderInCategory="100"
-        android:icon="@drawable/ic_collapse"
-        android:showAsAction="ifRoom" />
+    
 
 </menu>

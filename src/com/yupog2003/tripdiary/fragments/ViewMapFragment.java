@@ -62,7 +62,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.DialogInterface.OnCancelListener;
-import android.content.res.Configuration;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.media.ExifInterface;
@@ -122,6 +121,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 	SeekBar processSeekBar;
 	TextView time;
 	boolean showAll = true;
+	boolean uploadPublic;
 	SearchView search;
 	Thread playThread;
 	PlayRunnable playRunnable;
@@ -359,7 +359,26 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 						Account[] accounts = AccountManager.get(getActivity()).getAccountsByType(GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE);
 						if (accounts != null && accounts.length > 0) {
 							account = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString("account", accounts[0].name);
-							new GetAccessTokenTask().execute();
+							AlertDialog.Builder ab2=new AlertDialog.Builder(getActivity());
+							ab2.setTitle(getString(R.string.make_it_public));
+							ab2.setMessage(getString(R.string.make_it_public_to_share));
+							ab2.setPositiveButton(getString(R.string.yes), new DialogInterface.OnClickListener() {
+								
+								public void onClick(DialogInterface dialog, int which) {
+									// TODO Auto-generated method stub
+									uploadPublic=true;
+									new GetAccessTokenTask().execute();
+								}
+							});
+							ab2.setNegativeButton(getString(R.string.no), new DialogInterface.OnClickListener() {
+								
+								public void onClick(DialogInterface dialog, int which) {
+									// TODO Auto-generated method stub
+									uploadPublic=false;
+									new GetAccessTokenTask().execute();
+								}
+							});
+							ab2.show();
 						}
 						break;
 					}
@@ -397,13 +416,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 			ab.setNegativeButton(getString(R.string.cancel), null);
 			ab.show();
 		}
-		return false;
-	}
-
-	@Override
-	public void onConfigurationChanged(Configuration config) {
-		super.onConfigurationChanged(config);
-
+		return true;
 	}
 
 	class ImportMemoryTask extends AsyncTask<File, String, String> {
@@ -727,17 +740,19 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 
 		@Override
 		protected void onPostExecute(LatLng[] result) {
-			if (result != null && result.length > 0) {
-				setPOIs();
-				gmap.addPolyline(new PolylineOptions().add(result).width(5).color(trackColor));
-				gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(result[0], 16));
-			} else {
-				Toast.makeText(getActivity(), getString(R.string.invalid_gpx_file), Toast.LENGTH_LONG).show();
-				if (option == request_write_location_to_POI) {
-					ViewTripActivity.trip.deleteCache();
+			if (isAdded()){
+				if (result != null && result.length > 0) {
+					setPOIs();
+					gmap.addPolyline(new PolylineOptions().add(result).width(5).color(trackColor));
+					gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(result[0], 16));
+				} else {
+					Toast.makeText(getActivity(), getString(R.string.invalid_gpx_file), Toast.LENGTH_LONG).show();
+					if (option == request_write_location_to_POI) {
+						ViewTripActivity.trip.deleteCache();
+					}
 				}
+				pd.dismiss();
 			}
-			pd.dismiss();
 		}
 	}
 
@@ -800,27 +815,28 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 		ab.setTitle(getString(R.string.add_poi));
 		View layout = getActivity().getLayoutInflater().inflate(R.layout.edit_poi, null);
 		ab.setView(layout);
+		MyLatLng2 position=getLatLngInTrack(latlng);
 		final EditText edittitle = (EditText) layout.findViewById(R.id.edit_poi_title);
 		final EditText editlatitude = (EditText) layout.findViewById(R.id.edit_poi_latitude);
-		editlatitude.setText(String.valueOf(latlng.latitude));
+		editlatitude.setText(String.valueOf(position.latitude));
 		final EditText editlongitude = (EditText) layout.findViewById(R.id.edit_poi_longitude);
-		editlongitude.setText(String.valueOf(latlng.longitude));
+		editlongitude.setText(String.valueOf(position.longitude));
 		final EditText editaltitude = (EditText) layout.findViewById(R.id.edit_poi_altitude);
-		editaltitude.setText("0");
+		editaltitude.setText(String.valueOf(position.altitude));
 		final DatePicker editdate = (DatePicker) layout.findViewById(R.id.edit_poi_date);
-		Calendar c = Calendar.getInstance();
-		editdate.updateDate(c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH));
+		Time time=TimeAnalyzer.getTime(position.time, TimeAnalyzer.type_self);
+		editdate.updateDate(time.year, time.month, time.monthDay);
 		final TimePicker edittime = (TimePicker) layout.findViewById(R.id.edit_poi_time);
 		edittime.setIs24HourView(true);
-		edittime.setCurrentHour(c.get(Calendar.HOUR_OF_DAY));
-		edittime.setCurrentMinute(c.get(Calendar.MINUTE));
+		edittime.setCurrentHour(time.hour);
+		edittime.setCurrentMinute(time.minute);
 		ab.setPositiveButton(getString(R.string.enter), new DialogInterface.OnClickListener() {
 
 			public void onClick(DialogInterface dialog, int which) {
 				// TODO Auto-generated method stub
 				String title = edittitle.getText().toString();
 				LatLng location = new LatLng(Double.parseDouble(editlatitude.getText().toString()), Double.parseDouble(editlongitude.getText().toString()));
-				float altitude = Float.parseFloat(editaltitude.getText().toString());
+				double altitude = Double.parseDouble(editaltitude.getText().toString());
 				Time time = new Time(Time.getCurrentTimezone());
 				time.set(0, edittime.getCurrentMinute(), edittime.getCurrentHour(), editdate.getDayOfMonth(), editdate.getMonth(), editdate.getYear());
 				time.switchTimezone(Time.TIMEZONE_UTC);
@@ -841,12 +857,28 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 		ab.show();
 	}
 
-	private void addPoint(String newPointPath, LatLng latlng, float altitude, Time time) {
+	private void addPoint(String newPointPath, LatLng latlng, double altitude, Time time) {
 		POI poi = new POI(new File(newPointPath));
-		poi.updateBasicInformation(null, time, latlng.latitude, latlng.longitude, (double) altitude);
+		poi.updateBasicInformation(null, time, latlng.latitude, latlng.longitude, altitude);
 		updateAll();
 	}
-
+	
+	private MyLatLng2 getLatLngInTrack(LatLng latlng){
+		MyLatLng2 result=new MyLatLng2(latlng.latitude, latlng.longitude, 0, TimeAnalyzer.formatInCurrentTimezone(new Time()));
+		if (ViewTripActivity.trip.cache.lats==null)return result;
+		double minDistance=Double.MAX_VALUE;
+		int resultIndex=0;
+		for (int i=0;i<lat.length;i++){
+			double distance=Math.pow((latlng.latitude-lat[i].latitude), 2)+Math.pow(latlng.longitude-lat[i].longitude, 2);
+			if (distance<minDistance){
+				minDistance=distance;
+				resultIndex=i;
+			}
+		}
+		if (resultIndex<ViewTripActivity.trip.cache.lats.size())
+			result=ViewTripActivity.trip.cache.lats.get(resultIndex);
+		return result;
+	}
 	public void onMarkerDrag(Marker marker) {
 		// TODO Auto-generated method stub
 
@@ -1332,7 +1364,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 	}
 
 	class GetAccessTokenTask extends AsyncTask<String, String, String> {
-
+		
 		@Override
 		protected String doInBackground(String... params) {
 			// TODO Auto-generated method stub
@@ -1342,6 +1374,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 				intent.putExtra(SendTripService.filePathTag, ViewTripActivity.trip.dir.getPath());
 				intent.putExtra(SendTripService.accountTag, account);
 				intent.putExtra(SendTripService.tokenTag, token);
+				intent.putExtra(SendTripService.publicTag,uploadPublic);
 				getActivity().startService(intent);
 				EasyTracker.getInstance(getActivity()).send(MapBuilder.createEvent("Trip", "share_track_by_tripdiary", ViewTripActivity.trip.dir.getName(), null).build());
 			} catch (UserRecoverableAuthException e) {

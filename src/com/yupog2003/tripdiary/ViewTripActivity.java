@@ -19,7 +19,6 @@ import android.app.ActionBar;
 import android.app.Activity;
 import android.app.FragmentTransaction;
 import android.content.res.Configuration;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -134,56 +133,14 @@ public class ViewTripActivity extends Activity implements OnClickListener{
 		ft.commit();
 	}
 	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.activity_view_trip, menu);
-		if (mode==map_mode){
-			menu.removeItem(R.id.expandall);
-			menu.removeItem(R.id.collapseall);
-		}
-		return true;
-	}
-	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// TODO Auto-generated method stub
 		switch(item.getItemId()){
 		case android.R.id.home:
 			menu.toggle(true);
-			break;
-		case R.id.expandall:
-			switch(mode){
-			case text_mode:
-				allTextFragment.expandAll();
-				break;
-			case photo_mode:
-				allPictureFragment.expandAll();
-				break;
-			case video_mode:
-				allVideoFragment.expandAll();
-				break;
-			case audio_mode:
-				allAudioFragment.expandAll();
-				break;
-			}
-			break;
-		case R.id.collapseall:
-			switch(mode){
-			case text_mode:
-				allTextFragment.collapseAll();
-				break;
-			case photo_mode:
-				allPictureFragment.collapseAll();
-				break;
-			case video_mode:
-				allVideoFragment.collapseAll();
-				break;
-			case audio_mode:
-				allAudioFragment.collapseAll();
-				break;
-			}
-			break;
+			return true;
 		}
-		return true;
+		return false;
 	}
 	public void onClick(View v) {
 		// TODO Auto-generated method stub

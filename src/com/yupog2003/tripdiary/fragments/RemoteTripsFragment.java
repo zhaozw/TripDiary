@@ -108,7 +108,7 @@ public class RemoteTripsFragment extends Fragment {
 		
 	}
 	
-	class GetTripsTask extends AsyncTask<String, String, String[]> {
+	class GetTripsTask extends AsyncTask<String, String, Trip[]> {
 
 		static final String phpURL = MainActivity.serverURL+"/getTrips.php";
 
@@ -119,7 +119,7 @@ public class RemoteTripsFragment extends Fragment {
 		}
 
 		@Override
-		protected String[] doInBackground(String... params) {
+		protected Trip[] doInBackground(String... params) {
 			// TODO Auto-generated method stub
 			String url = phpURL + "?rootPath=Trips/" + account;
 			HttpClient client = new DefaultHttpClient();
@@ -132,9 +132,10 @@ public class RemoteTripsFragment extends Fragment {
 				Document document=builder.parse(entity.getContent());
 				Element rootElement=(Element) document.getDocumentElement();
 				NodeList tripList=rootElement.getElementsByTagName("trip");
-				String[] trips=new String[tripList.getLength()];
+				Trip[] trips=new Trip[tripList.getLength()];
 				for (int i=0;i<trips.length;i++){
-					trips[i]=((Element)tripList.item(i)).getAttribute("path");
+					Element e=(Element)tripList.item(i);
+					trips[i]=new Trip(e.getAttribute("path"),e.getAttribute("name"));
 				}
 				return trips;
 			} catch (ClientProtocolException e) {
@@ -157,7 +158,7 @@ public class RemoteTripsFragment extends Fragment {
 		}
 
 		@Override
-		protected void onPostExecute(String[] result) {
+		protected void onPostExecute(Trip[] result) {
 			// TODO Auto-generated method stub
 			if (result != null) {
 				adapter = new TripAdapter(result);
@@ -243,10 +244,10 @@ public class RemoteTripsFragment extends Fragment {
 	
 	class TripAdapter extends BaseAdapter implements OnItemClickListener,OnQueryTextListener,MultiChoiceModeListener{
 
-		String[] trips;
+		Trip[] trips;
 		int dip10;
 		boolean onActionMode=false;
-		public TripAdapter(String[] trips) {
+		public TripAdapter(Trip[] trips) {
 			this.trips = trips;
 			dip10=(int)DeviceHelper.pxFromDp(getActivity(), 10);
 		}
@@ -270,7 +271,7 @@ public class RemoteTripsFragment extends Fragment {
 			// TODO Auto-generated method stub
 			TextView textView = new TextView(getActivity());
 			textView.setTextAppearance(getActivity(), android.R.style.TextAppearance_Large);
-			textView.setText(trips[position].substring(trips[position].lastIndexOf("/") + 1));
+			textView.setText(trips[position].name);
 			textView.setPadding(dip10, dip10, dip10, dip10);
 			CheckableLayout layout=new CheckableLayout(getActivity());
 			layout.addView(textView);
@@ -279,17 +280,17 @@ public class RemoteTripsFragment extends Fragment {
 
 		public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
 			// TODO Auto-generated method stub
-			String tripPath=trips[position];
-			String tripName=tripPath.substring(tripPath.lastIndexOf("/") + 1);
+			String tripPath=trips[position].path;
+			String tripName=trips[position].name;
 			String uri=MainActivity.serverURL+"/Trip.html?tripname="+tripName+"&trippath="+tripPath;
 			Intent intent=new Intent(Intent.ACTION_VIEW);
 			intent.setData(Uri.parse(uri));
 			startActivity(intent);
 		}
-		ArrayList<String> checksName;
+		ArrayList<Trip> checksName;
 		public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
 			// TODO Auto-generated method stub
-			checksName = new ArrayList<String>();
+			checksName = new ArrayList<Trip>();
 			for (int i = 0; i < checks.length; i++) {
 				if (checks[i]) {
 					checksName.add(trips[i]);
@@ -299,8 +300,8 @@ public class RemoteTripsFragment extends Fragment {
 			switch(item.getItemId()){
 			case R.id.download:
 				for (int i=0;i<checksName.size();i++){
-					String tripPath=checksName.get(i);
-					String tripName=tripPath.substring(trips[i].lastIndexOf("/")+1);
+					String tripPath=checksName.get(i).path;
+					String tripName=checksName.get(i).name;
 					if (new File(MainActivity.rootPath+"/"+tripName).exists()){
 						Toast.makeText(getActivity(), getString(R.string.explain_same_trip_when_import), Toast.LENGTH_SHORT).show();
 					}else{
@@ -311,8 +312,8 @@ public class RemoteTripsFragment extends Fragment {
 				}
 				break;
 			case R.id.edit:
-				final String tripPath=checksName.get(0);
-				final String tripName=tripPath.substring(tripPath.lastIndexOf("/")+1);
+				final String tripPath=checksName.get(0).path;
+				final String tripName=checksName.get(0).name;
 				AlertDialog.Builder ab=new AlertDialog.Builder(getActivity());
 				ab.setTitle(getString(R.string.Name));
 				final EditText editText=new EditText(getActivity());
@@ -348,8 +349,8 @@ public class RemoteTripsFragment extends Fragment {
 					public void onClick(DialogInterface dialog, int which) {
 						// TODO Auto-generated method stub
 						for (int i=0;i<checksName.size();i++){
-							String tripPath=checksName.get(i);
-							String tripName=tripPath.substring(tripPath.lastIndexOf("/")+1);
+							String tripPath=checksName.get(i).path;
+							String tripName=checksName.get(i).name;
 							new UpdateDataTask().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR,"delete",tripPath,"",tripName,tripPath,token);
 						}
 					}
@@ -358,8 +359,8 @@ public class RemoteTripsFragment extends Fragment {
 				ab2.show();
 				break;
 			case R.id.togglepublic:
-				final String tripPath2=checksName.get(0);
-				final String tripName2=tripPath2.substring(tripPath2.lastIndexOf("/")+1);
+				String tripPath2=checksName.get(0).path;
+				String tripName2=checksName.get(0).name;
 				new UpdateDataTask().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR,"toggle_public",tripPath2,tripName2,tripName2,tripPath2,token);
 				break;
 			case R.id.selectall:
@@ -427,19 +428,19 @@ public class RemoteTripsFragment extends Fragment {
 			imm.hideSoftInputFromWindow(searchView.getWindowToken(), 0);
 			searchView.clearFocus();
 			if (!searchname.equals("")) {
-				final ArrayList<String> founds = new ArrayList<String>();
+				final ArrayList<Trip> founds = new ArrayList<Trip>();
 				int adaptercount = trips.length;
 				for (int i = 0; i < adaptercount; i++) {
-					String itemname = trips[i];
+					String itemname = trips[i].name;
 					if (itemname.toLowerCase(Locale.US).contains(searchname)) {
-						founds.add(itemname);
+						founds.add(trips[i]);
 					}
 				}
 				if (founds.size() == 0) {
 					Toast.makeText(getActivity(), getString(R.string.trip_not_found), Toast.LENGTH_SHORT).show();
 				} else if (founds.size() == 1) {
-					String tripPath=founds.get(0);
-					String tripName=tripPath.substring(tripPath.lastIndexOf("/") + 1);
+					String tripPath=founds.get(0).path;
+					String tripName=founds.get(0).name;
 					String uri=MainActivity.serverURL+"/Trip.html?tripname="+tripName+"&trippath="+tripPath;
 					Intent intent=new Intent(Intent.ACTION_VIEW);
 					intent.setData(Uri.parse(uri));
@@ -451,8 +452,8 @@ public class RemoteTripsFragment extends Fragment {
 
 						public void onClick(DialogInterface dialog, int which) {
 							// TODO Auto-generated method stub
-							String tripPath=founds.get(which);
-							String tripName=tripPath.substring(tripPath.lastIndexOf("/") + 1);
+							String tripPath=founds.get(which).path;
+							String tripName=founds.get(which).name;
 							String uri=MainActivity.serverURL+"/Trip.html?tripname="+tripName+"&trippath="+tripPath;
 							Intent intent=new Intent(Intent.ACTION_VIEW);
 							intent.setData(Uri.parse(uri));
@@ -467,7 +468,14 @@ public class RemoteTripsFragment extends Fragment {
 		}
 
 	}
-
+	class Trip{
+		String path;
+		String name;
+		public Trip(String path,String name){
+			this.path=path;
+			this.name=name;
+		}
+	}
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 		// TODO Auto-generated method stub

@@ -18,6 +18,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -45,7 +48,27 @@ public class AllVideoFragment extends Fragment{
 			listView=new ExpandableListView(getActivity());
 			listView.setAdapter(adapter);
 		}
+		setHasOptionsMenu(true);
 		return listView;
+	}
+	@Override
+	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+		// TODO Auto-generated method stub
+		inflater.inflate(R.menu.fragment_all, menu);
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// TODO Auto-generated method stub
+		switch(item.getItemId()){
+		case R.id.expandall:
+			expandAll();
+			break;
+		case R.id.collapseall:
+			collapseAll();
+			break;
+		}
+		return true;
 	}
 	public void expandAll(){
 		int groupCount=listView.getExpandableListAdapter().getGroupCount();

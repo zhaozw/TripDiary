@@ -84,7 +84,7 @@ public class LocalTripsFragment extends Fragment {
 	SharedPreferences.Editor categoryExpandEditor;
 	private static final int REQUEST_GET_TOKEN=0;
 	public static final String tag_path="tagPath";
-
+	boolean uploadPublic;
 	public LocalTripsFragment() {
 		
 	}
@@ -525,7 +525,26 @@ public class LocalTripsFragment extends Fragment {
 				Account[] accounts=AccountManager.get(getActivity()).getAccountsByType(GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE);
 				if (accounts!=null&&accounts.length>0){
 					account=PreferenceManager.getDefaultSharedPreferences(getActivity()).getString("account", accounts[0].name);
-					new GetAccessTokenTask().execute();
+					AlertDialog.Builder ab=new AlertDialog.Builder(getActivity());
+					ab.setTitle(getString(R.string.make_it_public));
+					ab.setMessage(getString(R.string.make_it_public_to_share));
+					ab.setPositiveButton(getString(R.string.yes), new DialogInterface.OnClickListener() {
+						
+						public void onClick(DialogInterface dialog, int which) {
+							// TODO Auto-generated method stub
+							uploadPublic=true;
+							new GetAccessTokenTask().execute();
+						}
+					});
+					ab.setNegativeButton(getString(R.string.no), new DialogInterface.OnClickListener() {
+						
+						public void onClick(DialogInterface dialog, int which) {
+							// TODO Auto-generated method stub
+							uploadPublic=false;
+							new GetAccessTokenTask().execute();
+						}
+					});
+					ab.show();
 				}
 			}
 			return true;
@@ -743,6 +762,7 @@ public class LocalTripsFragment extends Fragment {
 						intent.putExtra(SendTripService.filePathTag, path + "/" + adapter.checksName.get(i));
 						intent.putExtra(SendTripService.accountTag, account);
 						intent.putExtra(SendTripService.tokenTag, token);
+						intent.putExtra(SendTripService.publicTag,uploadPublic);
 						getActivity().startService(intent);
 						EasyTracker.getInstance(getActivity()).send(MapBuilder.createEvent("Trip", "share_track_by_tripdiary", adapter.checksName.get(i), null).build());
 					}

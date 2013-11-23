@@ -2,28 +2,11 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
-	<classpathentry kind="lib" path="/home/yupog2003/程式/Android/開發/android-sdk-linux/extras/google/google_play_services/libproject/google-play-services_lib/libs/google-play-services.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/AmbilWarna"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/ViewPagerIndicator"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/slidemenu"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
-	<classpathentry kind="lib" path="/home/yupog2003/程式/Eclipse/workspace/TripDiary/libs/android-support-v13.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="file:/media/6c9a6539-95e1-4394-ab09-e9a2c744f2c0/程式/Android/開發/android-sdk-linux/extras/android/support/v13/docs/"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
-	<classpathentry kind="lib" path="/home/yupog2003/程式/Eclipse/workspace/TripDiary/libs/android-support-v4.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="file:/media/6c9a6539-95e1-4394-ab09-e9a2c744f2c0/程式/Android/開發/android-sdk-linux/extras/android/support/v4/docs/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="libs/achartengine-1.0.0.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="file:/media/6c9a6539-95e1-4394-ab09-e9a2c744f2c0/程式/Eclipse/workspace/TripDiary/libs/achartengine-1.0.0-javadocs/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="con" path="com.google.gdt.eclipse.managedapis.MANAGED_API_CONTAINER/drive-v2r60lv1.12.0-beta"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/AmbilWarna"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/slidemenu"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/ViewPagerIndicator"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
