@@ -30,7 +30,6 @@ import com.yupog2003.tripdiary.R;
 import com.yupog2003.tripdiary.data.DeviceHelper;
 import com.yupog2003.tripdiary.data.POI;
 import com.yupog2003.tripdiary.data.TimeAnalyzer;
-import com.yupog2003.tripdiary.fragments.ViewMapFragment;
 
 public class PlayPointActivity extends Activity implements View.OnClickListener{
 	POI poi;

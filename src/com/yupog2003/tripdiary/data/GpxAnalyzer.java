@@ -39,6 +39,7 @@ import android.widget.Toast;
 public class GpxAnalyzer {
 	GPXHandler handler;
 	TrackCache cache;
+	private static final double earthRadius = 6378.1*1000;
 	
 	public GpxAnalyzer(String gpxPath,Context context,Handler contextHandler) throws ParserConfigurationException, SAXException, IOException{
 		
@@ -96,6 +97,7 @@ public class GpxAnalyzer {
 		MyLatLng2 previousLatLng;
 		Time time;
 		Time previousTime;
+		float previousAltitude;
 		StringBuffer sb;
 		String timezone=null;
 		float distance=0;
@@ -103,7 +105,7 @@ public class GpxAnalyzer {
 		float totalAltitude=0;
 		float maxAltitude=-Float.MAX_VALUE;
 		float minAltitude=Float.MAX_VALUE;
-		
+				
 		public ArrayList<Time> getTimes(){
 			return times;
 		}
@@ -140,6 +142,7 @@ public class GpxAnalyzer {
 			sb=new StringBuffer();
 			speeds=new ArrayList<Float>();
 			previousTime=new Time();
+			
 		}
 		@Override
 		public void startElement(String uri,String localName,String name,Attributes attributes)throws SAXException{
@@ -154,31 +157,26 @@ public class GpxAnalyzer {
 		}
 		@Override
 		public void characters(char[] ch,int start,int length)throws SAXException{
-			if (temp!=null){
-				if (temp.equals("ele")){
-					sb.append(ch,start,length);
-				}else if (temp.equals("time")){
-					sb.append(ch,start,length);
-				}
-			}
+			sb.append(ch,start,length);
 		}
 		@Override
 		public void endElement(String uri,String localName,String name)throws SAXException{
 			if (localName.equals("trkpt")){
-				float locationDiffer=-1;
-				float altitudeDiffer=-1;
 				if (latlng!=null){
-					float altitude=(float)(latlng.getAltitude());
+					float altitude=latlng.getAltitude();
 					if (altitude>maxAltitude)maxAltitude=altitude;
 					if (altitude<minAltitude)minAltitude=altitude;
 					if (previousLatLng!=null){
-						locationDiffer=distFrom(previousLatLng.getLatitude(), previousLatLng.getLongitude(), latlng.getLatitude(), latlng.getLongitude());
-						altitudeDiffer=(float)(altitude-previousLatLng.getAltitude());
-						distance+=locationDiffer;
-						if (altitudeDiffer>0)
-							totalAltitude+=altitudeDiffer;
+						float altitudeDiffer=altitude-previousAltitude;
+						distance+=distFrom(previousLatLng.latitude, previousLatLng.longitude, latlng.latitude, latlng.longitude);
+						if (Math.abs(altitudeDiffer)>15){
+							if (altitudeDiffer>0)
+								totalAltitude+=altitudeDiffer;
+							previousAltitude=altitude;
+						}
 					}else{
 						previousLatLng=new MyLatLng2();
+						previousAltitude=altitude;
 					}
 					previousLatLng.setMyLatLng2(latlng);
 					lats.add(latlng);
@@ -189,12 +187,10 @@ public class GpxAnalyzer {
 				}
 			}else if (localName.equals("time")){
 				time=new Time(Time.TIMEZONE_UTC);
-				String date="",t="";
-				String [] datetoks,timetoks;
-				date=sb.substring(0, sb.indexOf("T"));
-				t=sb.substring(sb.indexOf("T")+1,sb.length()-1);
-				datetoks=date.split("-");
-				timetoks=t.split(":");
+				String date=sb.substring(0, sb.indexOf("T"));
+				String t=sb.substring(sb.indexOf("T")+1,sb.length()-1);
+				String[] datetoks=date.split("-");
+				String[] timetoks=t.split(":");
 				time.set((int)(Double.parseDouble(timetoks[2])), Integer.parseInt(timetoks[1]), Integer.parseInt(timetoks[0]), Integer.parseInt(datetoks[2]), Integer.parseInt(datetoks[1])-1, Integer.parseInt(datetoks[0]));
 				time.switchTimezone(timezone);
 				if (latlng!=null){
@@ -212,9 +208,11 @@ public class GpxAnalyzer {
 		public void endDocument() throws SAXException {
 			// TODO Auto-generated method stub
 			maxSpeed=Float.MIN_VALUE;
-			for (int i=0;i<lats.size();i+=20){
-				if (i+20<lats.size()&&i+20<times.size()){
-					float dist=distFrom(lats.get(i).getLatitude(), lats.get(i).getLongitude(), lats.get(i+20).getLatitude(), lats.get(i+20).getLongitude());
+			int latsSize=lats.size();
+			int timesSize=times.size();
+			for (int i=0;i<latsSize;i+=20){
+				if (i+20<latsSize&&i+20<timesSize){
+					float dist=distFrom(lats.get(i).latitude, lats.get(i).longitude, lats.get(i+20).latitude, lats.get(i+20).longitude);
 					float time=(times.get(i+20).toMillis(false)-times.get(i).toMillis(false))/1000;
 					float speed=dist/time*18/5;
 					speeds.add(speed);
@@ -222,24 +220,23 @@ public class GpxAnalyzer {
 				}
 			}
 			super.endDocument();
+			
 		}
 		
 	}
 	public static float distFrom(double lat1, double lng1, double lat2, double lng2) {
-	    double earthRadius = 6378.1;
 	    double dLat = Math.toRadians(lat2-lat1);
 	    double dLng = Math.toRadians(lng2-lng1);
-	    double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+	    double a = Math.pow(Math.sin(dLat/2), 2) +
 	               Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
-	               Math.sin(dLng/2) * Math.sin(dLng/2);
+	               Math.pow(Math.sin(dLng/2), 2);
 	    double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 	    double dist = earthRadius * c;
 
-	    return (float)(dist * 1000);
-	    }
+	    return (float)dist;
+	  }
 	private void saveTrack(ArrayList<MyLatLng2> lats){
 		cache.lats=lats;
-		
 	}
 	private void saveStatistics(ArrayList<Time> times,float totaldistance,float maxSpeed,float totalAltitude,float maxAltitude,float minAltitude){
 		cache.endTime=TimeAnalyzer.formatInTimezone(times.get(times.size()-1),null);
