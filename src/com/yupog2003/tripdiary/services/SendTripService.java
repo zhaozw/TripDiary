@@ -101,7 +101,8 @@ public class SendTripService extends IntentService {
 			}
 			br.close();
 			stopForeground(true);
-			if (result.toString().contains("\n")) {
+			String resultStr=result.toString();
+			if (resultStr.contains("\n")&&resultStr.contains("tripname=")&&resultStr.contains("trippath=")) {
 				final String returnURL = result.substring(0, result.lastIndexOf("\n"));
 				final String tripName=returnURL.substring(returnURL.indexOf("tripname=")+9, returnURL.indexOf("&"));
 				final String tripPath=returnURL.substring(returnURL.indexOf("trippath=")+9);
@@ -134,6 +135,8 @@ public class SendTripService extends IntentService {
 					SendTripService.this.startActivity(intent1);
 					Toast.makeText(getApplicationContext(), returnURL, Toast.LENGTH_SHORT).show();
 				}
+			}else{
+				Toast.makeText(SendTripService.this, resultStr, Toast.LENGTH_SHORT).show();
 			}
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block

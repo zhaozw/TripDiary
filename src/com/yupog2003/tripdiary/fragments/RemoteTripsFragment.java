@@ -93,7 +93,14 @@ public class RemoteTripsFragment extends Fragment {
 		setHasOptionsMenu(true);
 		loaddata();
 	}
-	
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		// TODO Auto-generated method stub
+		super.onSaveInstanceState(outState);
+		if (outState.isEmpty()){
+			outState.putBoolean("bug:fix", true);
+		}
+	}
 	public void loaddata(){
 		if (trip_option==option_personal) {
 			Account[] accounts = AccountManager.get(getActivity()).getAccountsByType(GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE);

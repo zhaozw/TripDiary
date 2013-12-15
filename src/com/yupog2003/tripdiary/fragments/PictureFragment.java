@@ -65,6 +65,14 @@ public class PictureFragment extends Fragment implements OnItemClickListener{
 			adapter.reFresh();
 		}
 	}
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		// TODO Auto-generated method stub
+		super.onSaveInstanceState(outState);
+		if (outState.isEmpty()){
+			outState.putBoolean("bug:fix", true);
+		}
+	}
 	class PictureAdapter extends BaseAdapter{
 		File[] files;
 		int width;

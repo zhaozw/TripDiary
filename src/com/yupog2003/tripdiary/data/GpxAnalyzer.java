@@ -92,11 +92,10 @@ public class GpxAnalyzer {
 		ArrayList<MyLatLng2> lats;
 		ArrayList<Time> times;
 		ArrayList<Float> speeds;
-		String temp;
 		MyLatLng2 latlng;
 		MyLatLng2 previousLatLng;
 		Time time;
-		Time previousTime;
+		long timeZoneOffset=0;  //in seconds
 		float previousAltitude;
 		StringBuffer sb;
 		String timezone=null;
@@ -141,19 +140,18 @@ public class GpxAnalyzer {
 			times=new ArrayList<Time>();
 			sb=new StringBuffer();
 			speeds=new ArrayList<Float>();
-			previousTime=new Time();
-			
+			timezone=TimeAnalyzer.getTripTimeZone(context, path.substring(path.lastIndexOf("/")+1, path.lastIndexOf(".gpx")));
+			Time tempTime=new Time(Time.TIMEZONE_UTC);
+			tempTime.switchTimezone(timezone);
+			timeZoneOffset=tempTime.gmtoff;
 		}
 		@Override
 		public void startElement(String uri,String localName,String name,Attributes attributes)throws SAXException{
 			if (localName.equals("trkpt")){
 				latlng=new MyLatLng2(Double.parseDouble(attributes.getValue("lat")),Double.parseDouble(attributes.getValue("lon")),0,null);
-				if (timezone==null){
-					timezone=TimeAnalyzer.getTripTimeZone(context, path.substring(path.lastIndexOf("/")+1, path.lastIndexOf(".gpx")));
-				}
 			}
-			temp=localName;
 			sb.setLength(0);
+			
 		}
 		@Override
 		public void characters(char[] ch,int start,int length)throws SAXException{
@@ -182,19 +180,21 @@ public class GpxAnalyzer {
 					lats.add(latlng);
 					latlng=null;
 				}
-				if (time!=null){
-					times.add(time);
-				}
 			}else if (localName.equals("time")){
-				time=new Time(Time.TIMEZONE_UTC);
-				String date=sb.substring(0, sb.indexOf("T"));
-				String t=sb.substring(sb.indexOf("T")+1,sb.length()-1);
-				String[] datetoks=date.split("-");
-				String[] timetoks=t.split(":");
-				time.set((int)(Double.parseDouble(timetoks[2])), Integer.parseInt(timetoks[1]), Integer.parseInt(timetoks[0]), Integer.parseInt(datetoks[2]), Integer.parseInt(datetoks[1])-1, Integer.parseInt(datetoks[0]));
-				time.switchTimezone(timezone);
-				if (latlng!=null){
-					latlng.setTime(TimeAnalyzer.formatInTimezone(time,null));
+				if (sb.indexOf("-")!=-1&&sb.indexOf("T")!=-1&&sb.indexOf(":")!=-1&&sb.indexOf("Z")!=-1){
+					time=new Time(Time.TIMEZONE_UTC);
+					String year=sb.substring(0, sb.indexOf("-"));
+					String month=sb.substring(sb.indexOf("-")+1, sb.lastIndexOf("-"));
+					String day=sb.substring(sb.lastIndexOf("-")+1, sb.indexOf("T"));
+					String hour=sb.substring(sb.indexOf("T")+1, sb.indexOf(":"));
+					String minute=sb.substring(sb.indexOf(":")+1, sb.lastIndexOf(":"));
+					String second=sb.substring(sb.lastIndexOf(":")+1, sb.indexOf("Z"));
+					time.set((int)(Double.parseDouble(second)), Integer.parseInt(minute), Integer.parseInt(hour), Integer.parseInt(day), Integer.parseInt(month)-1, Integer.parseInt(year));
+					time.set(time.toMillis(false)+timeZoneOffset*1000);
+					times.add(time);
+					if (latlng!=null){
+						latlng.setTime(TimeAnalyzer.formatInTimezone(time, null));
+					}
 				}
 			}else if (localName.equals("ele")){
 				if (latlng!=null){
@@ -202,7 +202,7 @@ public class GpxAnalyzer {
 				}
 			}
 			sb.setLength(0);
-			temp=null;
+			
 		}
 		@Override
 		public void endDocument() throws SAXException {
@@ -220,9 +220,7 @@ public class GpxAnalyzer {
 				}
 			}
 			super.endDocument();
-			
 		}
-		
 	}
 	public static float distFrom(double lat1, double lng1, double lat2, double lng2) {
 	    double dLat = Math.toRadians(lat2-lat1);

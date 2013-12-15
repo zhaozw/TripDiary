@@ -26,14 +26,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.api.client.extensions.android.http.AndroidHttp;
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
-import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
-import com.google.api.client.http.FileContent;
-import com.google.api.client.json.gson.GsonFactory;
-import com.google.api.services.drive.Drive;
-import com.google.api.services.drive.DriveScopes;
-import com.google.api.services.drive.model.Permission;
 import com.yupog2003.tripdiary.PlayPointActivity;
 import com.yupog2003.tripdiary.R;
 import com.yupog2003.tripdiary.ViewCostActivity;
@@ -128,15 +120,12 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 	Handler handler;
 	int trackColor;
 	LinearLayout buttonBar;
-	GoogleAccountCredential credential;
 	String token;
 	String account;
 
 	private static final int import_track = 0;
 	private static final int update_request = 1;
-	private static final int REQUEST_ACCOUNT_PICKER = 2;
-	private static final int REQUEST_AUTHORIZATION = 3;
-	private static final int REQUEST_GET_TOKEN = 4;
+	private static final int REQUEST_GET_TOKEN = 2;
 	// private static final int playtriptype_normal=0;
 	private static final int playtriptype_skyview = 1;
 	private static final int request_write_location_to_POI = 1;
@@ -197,7 +186,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 		setHasOptionsMenu(true);
 		if (gmap == null) {
 			gmap = mapFragment.getMap();
-			if (gmap!=null){
+			if (gmap != null) {
 				gmap.setMyLocationEnabled(true);
 				gmap.setOnInfoWindowClickListener(this);
 				gmap.setOnMapLongClickListener(this);
@@ -318,7 +307,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 		} else if (item.getItemId() == R.id.sharetrackby) {
 			AlertDialog.Builder ab = new AlertDialog.Builder(getActivity());
 			ab.setTitle(getString(R.string.share_track_by___));
-			String[] bys = new String[] { getString(R.string.gpx), getString(R.string.kml), getString(R.string.Hyperlink), getString(R.string.app_name) };
+			String[] bys = new String[] { getString(R.string.gpx), getString(R.string.kml), getString(R.string.app_name) };
 			ab.setSingleChoiceItems(bys, -1, new DialogInterface.OnClickListener() {
 
 				public void onClick(DialogInterface dialog, int which) {
@@ -354,10 +343,6 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 						ab.show();
 						break;
 					case 2:
-						credential = GoogleAccountCredential.usingOAuth2(getActivity(), DriveScopes.DRIVE);
-						startActivityForResult(credential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
-						break;
-					case 3:
 						Account[] accounts = AccountManager.get(getActivity()).getAccountsByType(GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE);
 						if (accounts != null && accounts.length > 0) {
 							account = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString("account", accounts[0].name);
@@ -462,7 +447,8 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 		protected String doInBackground(File... params) {
 			// TODO Auto-generated method stub
 			publishProgress("Sorting...", "0");
-			if (ViewTripActivity.trip.pois.length<1)return null;
+			if (ViewTripActivity.trip.pois.length < 1)
+				return null;
 			HashMap<Long, POI> pois = new HashMap<Long, POI>();
 			for (int i = 0; i < ViewTripActivity.trip.pois.length; i++) {
 				Time time = ViewTripActivity.trip.pois[i].time;
@@ -628,6 +614,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 	}
 
 	private void setPOIs() {
+		if (markers==null||ViewTripActivity.trip.pois==null||!isAdded())return;
 		markers.clear();
 		ViewTripActivity.trip.refreshPOIs();
 		for (int i = 0; i < ViewTripActivity.trip.pois.length; i++) {
@@ -706,18 +693,22 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 			// TODO Auto-generated method stub
 			option = arg0[0];
 			if (ViewTripActivity.trip.cacheFile.exists()) {
-				publishProgress(getString(R.string.analysis_gpx));
+				if (isAdded())
+					publishProgress(getString(R.string.analysis_gpx));
 				ViewTripActivity.trip.getCache();
 			} else {
-				publishProgress(getString(R.string.first_analysis_gpx));
+				if (isAdded())
+					publishProgress(getString(R.string.first_analysis_gpx));
 				ViewTripActivity.trip.updateCacheFromGpxFile(getActivity(), handler);
 				if (option == request_write_location_to_POI) {
 					if (ViewTripActivity.trip.cache != null) {
-						publishProgress(getString(R.string.setup_pois));
+						if (isAdded())
+							publishProgress(getString(R.string.setup_pois));
 						writeLocationToPoint(ViewTripActivity.trip.cache.lats);
 						// setPOIs();
 					} else {
-						Toast.makeText(getActivity(), getString(R.string.gpx_doesnt_contain_time_information), Toast.LENGTH_LONG).show();
+						if (isAdded())
+							Toast.makeText(getActivity(), getString(R.string.gpx_doesnt_contain_time_information), Toast.LENGTH_LONG).show();
 					}
 				}
 				System.gc();
@@ -787,24 +778,6 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 				FileHelper.copyFile(new File(uri.getPath()), new File(path + "/" + name + "/" + name + ".gpx"));
 				new SetLocus().execute(request_write_location_to_POI);
 				break;
-			case REQUEST_ACCOUNT_PICKER:
-				if (resultCode == Activity.RESULT_OK && data != null && data.getExtras() != null) {
-					String accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
-					if (accountName != null) {
-						credential.setSelectedAccountName(accountName);
-						Drive service = new Drive.Builder(AndroidHttp.newCompatibleTransport(), new GsonFactory(), credential).build();
-						new ExportTracktoDriveTask(new File(path + "/" + name + "/" + name + ".kml"), service).execute();
-					}
-				}
-				break;
-			case REQUEST_AUTHORIZATION:
-				if (resultCode == Activity.RESULT_OK) {
-					Drive service = new Drive.Builder(AndroidHttp.newCompatibleTransport(), new GsonFactory(), credential).build();
-					new ExportTracktoDriveTask(new File(path + "/" + name + "/" + name + ".kml"), service).execute();
-				} else {
-					startActivityForResult(credential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
-				}
-				break;
 			case REQUEST_GET_TOKEN:
 				if (resultCode == Activity.RESULT_OK) {
 					new GetAccessTokenTask().execute();
@@ -870,7 +843,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 
 	private MyLatLng2 getLatLngInTrack(LatLng latlng) {
 		MyLatLng2 result = new MyLatLng2(latlng.latitude, latlng.longitude, 0, TimeAnalyzer.formatInCurrentTimezone(new Time()));
-		if (ViewTripActivity.trip.cache.lats == null)
+		if (ViewTripActivity.trip.cache.lats == null || lat == null)
 			return result;
 		double minDistance = Double.MAX_VALUE;
 		int resultIndex = 0;
@@ -910,6 +883,10 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 		if (v == null)
 			return;
 		if (v.equals(viewInformation)) {
+			if (ViewTripActivity.trip.cache == null) {
+				Toast.makeText(getActivity(), getString(R.string.no_data_can_be_displayed), Toast.LENGTH_SHORT).show();
+				return;
+			}
 			AlertDialog.Builder ab = new AlertDialog.Builder(getActivity());
 			ab.setTitle(getString(R.string.statistics));
 			LinearLayout layout = (LinearLayout) getActivity().getLayoutInflater().inflate(R.layout.map_view_basicinformation, null);
@@ -936,6 +913,8 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 			ab.show();
 			EasyTracker.getInstance(getActivity()).send(MapBuilder.createEvent("Trip", "view_basicinformation", ViewTripActivity.trip.dir.getName(), null).build());
 		} else if (v.equals(switchMapMode)) {
+			if (gmap == null)
+				return;
 			switch (gmap.getMapType()) {
 			case GoogleMap.MAP_TYPE_NORMAL:
 				gmap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
@@ -1078,22 +1057,22 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 		public static final int slow = 1;
 
 		public PlayRunnable(int pointSize) {
-			SharedPreferences preferences=PreferenceManager.getDefaultSharedPreferences(getActivity());
-			playMode=Integer.parseInt(preferences.getString("playingtripmode", "0"));
-			mapLayout=(RelativeLayout) rootView.findViewById(R.id.maplayout);
-			interval= Integer.parseInt(preferences.getString("playtripspeed", "10"));
-			if (ViewTripActivity.trip.cache!=null)
+			SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+			playMode = Integer.parseInt(preferences.getString("playingtripmode", "0"));
+			mapLayout = (RelativeLayout) rootView.findViewById(R.id.maplayout);
+			interval = Integer.parseInt(preferences.getString("playtripspeed", "10"));
+			if (ViewTripActivity.trip.cache != null && ViewTripActivity.trip.cache.lats != null)
 				trackCacheSize = ViewTripActivity.trip.cache.lats.size();
-			if (lat!=null)
-				latlength=lat.length;
-			if (markers!=null)
-				markersSize=markers.size();
+			if (lat != null)
+				latlength = lat.length;
+			if (markers != null)
+				markersSize = markers.size();
 			pauselock = new Object();
 			pause = false;
 			stop = false;
 			this.pointSize = pointSize / 2;
-			if (lat.length>0)
-				processSeekBar.setMax(lat.length - 1);
+			if (latlength > 0)
+				processSeekBar.setMax(latlength - 1);
 			processSeekBar.setOnSeekBarChangeListener(this);
 			markersPosition = new LatLng[markersSize];
 			for (int i = 0; i < markersSize; i++) {
@@ -1194,23 +1173,25 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 					}
 				}
 			}
-			handler.post(new Runnable() {
+			if (latlength>0&&lat!=null){
+				handler.post(new Runnable() {
 
-				public void run() {
-					// TODO Auto-generated method stub
-					if (playMode == playtriptype_skyview) {
-						runPointImage = new ImageView(getActivity());
-						runPointImage.setImageResource(R.drawable.runpoint);
-						RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-						params.addRule(RelativeLayout.CENTER_IN_PARENT);
-						mapLayout.addView(runPointImage, params);
-					} else {
-						playPoint = gmap.addMarker(new MarkerOptions().position(lat[0]).icon(BitmapDescriptorFactory.fromResource(R.drawable.runpoint)).anchor((float) 0.5, (float) 0.5));
+					public void run() {
+						// TODO Auto-generated method stub
+						if (playMode == playtriptype_skyview) {
+							runPointImage = new ImageView(getActivity());
+							runPointImage.setImageResource(R.drawable.runpoint);
+							RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+							params.addRule(RelativeLayout.CENTER_IN_PARENT);
+							mapLayout.addView(runPointImage, params);
+						} else {
+							playPoint = gmap.addMarker(new MarkerOptions().position(lat[0]).icon(BitmapDescriptorFactory.fromResource(R.drawable.runpoint)).anchor((float) 0.5, (float) 0.5));
+						}
 					}
-				}
 
-			});
-			passed = new boolean[markers.size()];
+				});
+			}
+			passed = new boolean[markersSize];
 			resetPassed();
 			for (i = 0; i < latlength; i += add) {
 				try {
@@ -1287,7 +1268,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 			if (index < trackCacheSize && times[index] != null) {
 				time.setText(times[index]);
 			}
-			if (index<latlength){
+			if (index < latlength) {
 				if (playMode == playtriptype_skyview) {
 					gmap.animateCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition(lat[index], gmap.getCameraPosition().zoom, 90, bearing)), interval, null);
 				} else {
@@ -1312,80 +1293,6 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 			i = progress;
 			setPosition(i);
 		}
-	}
-
-	class ExportTracktoDriveTask extends AsyncTask<String, String, String> {
-		ProgressDialog pd;
-		File kmlFile;
-		Drive service;
-
-		public ExportTracktoDriveTask(File kmlFile, Drive service) {
-			this.kmlFile = kmlFile;
-			this.service = service;
-			pd = new ProgressDialog(getActivity());
-			pd.setTitle(getString(R.string.processing));
-			EasyTracker.getInstance(getActivity()).send(MapBuilder.createEvent("Trip", "share_track_by_hyperlink", ViewTripActivity.trip.dir.getName(), null).build());
-		}
-
-		@Override
-		protected void onPostExecute(String result) {
-			// TODO Auto-generated method stub
-			pd.dismiss();
-			if (result != null) {
-				Intent intent = new Intent(Intent.ACTION_SEND);
-				intent.setType("text/plain");
-				intent.putExtra(Intent.EXTRA_TEXT, result);
-				startActivity(intent);
-			}
-		}
-
-		@Override
-		protected void onPreExecute() {
-			// TODO Auto-generated method stub
-			pd.setMessage(getString(R.string.generating_kml_file));
-			pd.show();
-			FileHelper.convertToKml(markers, lat, kmlFile, ViewTripActivity.trip.note);
-		}
-
-		@Override
-		protected void onProgressUpdate(String... values) {
-			// TODO Auto-generated method stub
-			pd.setMessage(values[0]);
-		}
-
-		@Override
-		protected String doInBackground(String... params) {
-			// TODO Auto-generated method stub
-			publishProgress(getString(R.string.uploading_to_google_drive));
-			FileContent mediaContent = new FileContent("application/vnd.google-earth.kml+xml", kmlFile);
-			com.google.api.services.drive.model.File body = new com.google.api.services.drive.model.File();
-			body.setTitle(kmlFile.getName());
-			body.setMimeType("application/vnd.google-earth.kml+xml");
-			try {
-				com.google.api.services.drive.model.File file = service.files().insert(body, mediaContent).execute();
-				if (file != null) {
-					publishProgress(getString(R.string.making_the_file_public));
-					String fileId = file.getId();
-					String link = file.getAlternateLink();
-					Permission newPermission = new Permission();
-					newPermission.setValue("");
-					newPermission.setRole("reader");
-					newPermission.setType("anyone");
-					service.permissions().insert(fileId, newPermission).execute();
-					publishProgress(getString(R.string.generating_hyper_link));
-					return link;
-				}
-			} catch (UserRecoverableAuthIOException e) {
-				startActivityForResult(e.getIntent(), REQUEST_AUTHORIZATION);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			return null;
-		}
-
 	}
 
 	class GetAccessTokenTask extends AsyncTask<String, String, String> {

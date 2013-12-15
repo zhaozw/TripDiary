@@ -13,6 +13,7 @@ import com.google.android.gms.auth.GoogleAuthUtil;
 import com.yupog2003.tripdiary.CategoryActivity;
 import com.yupog2003.tripdiary.MainActivity;
 import com.yupog2003.tripdiary.R;
+import com.yupog2003.tripdiary.data.DeviceHelper;
 import com.yupog2003.tripdiary.data.MyBackupAgent;
 import com.yupog2003.tripdiary.data.FileHelper.DirAdapter;
 import com.yupog2003.tripdiary.data.TimeAnalyzer;
@@ -22,13 +23,10 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
@@ -226,7 +224,7 @@ public class PreferFragment extends PreferenceFragment implements OnPreferenceCh
 				
 				public void onClick(DialogInterface dialog, int which) {
 					// TODO Auto-generated method stub
-					if (isMobileNetworkAvailable(getActivity())){
+					if (DeviceHelper.isMobileNetworkAvailable(getActivity())){
 						new UpdateTripTimeZoneTask().execute();
 					}else{
 						Toast.makeText(getActivity(), getString(R.string.no_internet_connection), Toast.LENGTH_SHORT).show();
@@ -378,11 +376,5 @@ public class PreferFragment extends PreferenceFragment implements OnPreferenceCh
 		}
 		
 	}
-	public static boolean isMobileNetworkAvailable(Context context){
-		ConnectivityManager manager=(ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
-		NetworkInfo wifiInfo=manager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-		NetworkInfo mobileInfo=manager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
-		if (wifiInfo==null&&mobileInfo==null)return false;
-		return wifiInfo.isConnected()||mobileInfo.isConnected();
-	}
+	
 }

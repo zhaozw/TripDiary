@@ -2,6 +2,8 @@ package com.yupog2003.tripdiary.data;
 
 import android.app.Activity;
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.util.DisplayMetrics;
 
 public class DeviceHelper {
@@ -28,5 +30,11 @@ public class DeviceHelper {
 		if (c == null)
 			return 0;
 		return dp * c.getResources().getDisplayMetrics().density;
+	}
+	public static boolean isMobileNetworkAvailable(Context context){
+		ConnectivityManager manager=(ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo wifiInfo=manager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+		NetworkInfo mobileInfo=manager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+		return (wifiInfo==null?false:wifiInfo.isConnected())||(mobileInfo==null?false:mobileInfo.isConnected());
 	}
 }

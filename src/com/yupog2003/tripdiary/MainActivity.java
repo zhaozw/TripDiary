@@ -15,6 +15,8 @@ import java.util.Set;
 
 import com.google.analytics.tracking.android.EasyTracker;
 import com.google.analytics.tracking.android.MapBuilder;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.yupog2003.tripdiary.R;
 import com.yupog2003.tripdiary.data.ColorHelper;
 import com.yupog2003.tripdiary.data.PackageHelper;
@@ -52,6 +54,7 @@ public class MainActivity extends Activity implements Button.OnClickListener {
 	Button resumeTrip;
 	Button viewHistory;
 	public static String rootPath;
+	public final static int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 	public static final String serverURL = "http://140.113.121.20/TripDiary";
 
 	@Override
@@ -71,18 +74,6 @@ public class MainActivity extends Activity implements Button.OnClickListener {
 					e.printStackTrace();
 				}
 			}
-			File[] trips = file.listFiles(new FileFilter() {
-
-				public boolean accept(File pathname) {
-					// TODO Auto-generated method stub
-					return pathname.isDirectory() && !pathname.getName().startsWith(".");
-				}
-			});
-			for (int i = 0; i < trips.length; i++) {
-				String tripName = trips[i].getName();
-				new File(trips[i].getPath() + "/" + tripName + ".gpx.lats").delete();
-				new File(trips[i].getPath() + "/" + tripName + ".gpx.statistics").delete();
-			}
 		}
 		SharedPreferences.Editor editor = getSharedPreferences("category", MODE_PRIVATE).edit();
 		editor.putString("nocategory", String.valueOf(Color.WHITE));
@@ -91,18 +82,38 @@ public class MainActivity extends Activity implements Button.OnClickListener {
 			PackageHelper.askForInstallApp(MainActivity.this, PackageHelper.GoogleMapPackageName, getString(R.string.google_map));
 		}
 		startTrip = (Button) findViewById(R.id.starttrip);
-		startTrip.setOnClickListener(this);
 		viewHistory = (Button) findViewById(R.id.viewhistory);
-		viewHistory.setOnClickListener(this);
 		resumeTrip = (Button) findViewById(R.id.resume_trip);
-		resumeTrip.setOnClickListener(this);
-
+		if (checkPlayService()){
+			startTrip.setOnClickListener(this);
+			viewHistory.setOnClickListener(this);
+			resumeTrip.setOnClickListener(this);
+		}
 	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.activity_main, menu);
 		return true;
+	}
+	private boolean checkPlayService(){
+		int resultCode=GooglePlayServicesUtil.isGooglePlayServicesAvailable(MainActivity.this);
+		if (resultCode!=ConnectionResult.SUCCESS){
+			if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)){
+				GooglePlayServicesUtil.getErrorDialog(resultCode, MainActivity.this, PLAY_SERVICES_RESOLUTION_REQUEST).show();
+			}else{
+				Toast.makeText(MainActivity.this, "This device is not supported by Google Play Serivce", Toast.LENGTH_SHORT).show();
+				MainActivity.this.finish();
+			}
+			return false;
+		}
+		return true;
+	}
+	@Override
+	protected void onResume() {
+		// TODO Auto-generated method stub
+		super.onResume();
+		checkPlayService();
 	}
 
 	private boolean isGpsEnabled() {

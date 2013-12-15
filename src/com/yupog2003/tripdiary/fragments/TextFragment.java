@@ -1,6 +1,7 @@
 package com.yupog2003.tripdiary.fragments;
 
 import java.io.File;
+
 import com.yupog2003.tripdiary.R;
 import com.yupog2003.tripdiary.ViewPointActivity;
 
@@ -26,6 +27,14 @@ public class TextFragment extends Fragment {
 	public void onResume(){
 		super.onResume();
 		setText();
+	}
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		// TODO Auto-generated method stub
+		super.onSaveInstanceState(outState);
+		if (outState.isEmpty()){
+			outState.putBoolean("bug:fix", true);
+		}
 	}
 	public void setText() {
 		// TODO Auto-generated method stub

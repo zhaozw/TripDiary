@@ -72,7 +72,7 @@ public class RecordService extends Service implements LocationListener,GpsStatus
 					if (trip.gpxFile.length()==0){
 						bw=new BufferedWriter(new FileWriter(trip.gpxFile,true));
 						bw.write("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n");
-						bw.write("<gpx>\n");
+						bw.write("	<gpx>\n");
 						bw.flush();
 					}else{
 						StringBuffer sb=new StringBuffer();
@@ -168,7 +168,7 @@ public class RecordService extends Service implements LocationListener,GpsStatus
 			// TODO Auto-generated method stub
 			run=false;
 			try {
-				bw.write("</gpx>");
+				bw.write("	</gpx>");
 				bw.flush();
 				bw.close();
 			} catch (IOException e) {
@@ -242,10 +242,10 @@ public class RecordService extends Service implements LocationListener,GpsStatus
 		}
 		try {
 			if (run){
-				bw.write("<trkpt lat=\""+String.valueOf(latitude)+"\" lon=\""+String.valueOf(longtitude)+"\">\n");
-				bw.write("<ele>"+String.valueOf(elevation)+"</ele>\n");
-				bw.write("<time>"+String.valueOf(year)+"-"+String.valueOf(month)+"-"+String.valueOf(time.monthDay)+"T"+String.valueOf(time.hour)+":"+String.valueOf(time.minute)+":"+String.valueOf(time.second)+"Z</time>\n");
-				bw.write("</trkpt>\n");
+				bw.write("		<trkpt lat=\""+String.valueOf(latitude)+"\" lon=\""+String.valueOf(longtitude)+"\">\n");
+				bw.write("			<ele>"+String.valueOf(elevation)+"</ele>\n");
+				bw.write("			<time>"+String.valueOf(year)+"-"+String.valueOf(month)+"-"+String.valueOf(time.monthDay)+"T"+String.valueOf(time.hour)+":"+String.valueOf(time.minute)+":"+String.valueOf(time.second)+"Z</time>\n");
+				bw.write("		</trkpt>\n");
 				bw.flush();
 			}
 		} catch (IOException e) {

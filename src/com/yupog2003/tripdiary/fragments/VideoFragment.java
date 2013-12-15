@@ -47,7 +47,14 @@ public class VideoFragment extends Fragment implements OnItemClickListener{
 		super.onResume();
 		setVideo();
 	}
-	
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		// TODO Auto-generated method stub
+		super.onSaveInstanceState(outState);
+		if (outState.isEmpty()){
+			outState.putBoolean("bug:fix", true);
+		}
+	}
 	public void setVideo() {
 		// TODO Auto-generated method stub
 		layout=(GridView)getView().findViewById(R.id.videogrid);

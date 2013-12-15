@@ -3,11 +3,12 @@ package com.yupog2003.tripdiary;
 import com.viewpagerindicator.TitlePageIndicator;
 import com.yupog2003.tripdiary.fragments.LocalTripsFragment;
 import com.yupog2003.tripdiary.fragments.RemoteTripsFragment;
+
 import android.os.Bundle;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.support.v13.app.FragmentPagerAdapter;
+import android.support.v13.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.Menu;
 
@@ -35,7 +36,7 @@ public class ViewActivity extends Activity {
 			}
 		}
 	}
-	class MyPagerAdapter extends FragmentPagerAdapter {
+	class MyPagerAdapter extends FragmentStatePagerAdapter {
 
 		public Fragment[] fragments;
 

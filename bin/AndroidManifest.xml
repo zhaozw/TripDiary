@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.yupog2003.tripdiary"
-    android:versionCode="89"
-    android:versionName="0.8.1" >
+    android:versionCode="93"
+    android:versionName="0.8.5" >
 
     <uses-sdk
         android:minSdkVersion="14"
@@ -33,7 +33,6 @@
 
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    
 
     <application
         android:allowBackup="true"
@@ -100,8 +99,7 @@
             android:name="com.google.android.maps.v2.API_KEY"
             android:value="AIzaSyCv_ahGgT46nBio7n4UpViFrxsUUZ98DUE" />
         <!-- publish key=  AIzaSyCv_ahGgT46nBio7n4UpViFrxsUUZ98DUE -->
-        <!-- debug key=    AIzaSyBhpyozA58LqjJu-koEYgDqsYwmdHuZWr4 -->
-        
+        <!-- debug key=    AIzaSyCBfSiplQ2PNznpykrCqoYVF9KPxXUQcoM -->
 
         <service android:name="com.yupog2003.tripdiary.services.SendTripService" >
         </service>

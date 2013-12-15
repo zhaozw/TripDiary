@@ -57,6 +57,8 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.EditText;
 import android.widget.ExpandableListView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.SearchView;
@@ -101,6 +103,15 @@ public class LocalTripsFragment extends Fragment {
 		tripeditor = tripsp.edit();
 		categoryExpandEditor = categoryExpandSp.edit();
 		return listView;
+	}
+
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		// TODO Auto-generated method stub
+		super.onSaveInstanceState(outState);
+		if (outState.isEmpty()){
+			outState.putBoolean("bug:fix", true);
+		}
 	}
 
 	@Override
@@ -546,6 +557,24 @@ public class LocalTripsFragment extends Fragment {
 					});
 					ab.show();
 				}
+			}else if (item.getItemId()==R.id.category){
+				AlertDialog.Builder ab=new AlertDialog.Builder(getActivity());
+				ab.setTitle(getString(R.string.choose_a_category));
+				ab.setSingleChoiceItems(categories, -1, new DialogInterface.OnClickListener() {
+					
+					public void onClick(DialogInterface dialog, int which) {
+						// TODO Auto-generated method stub
+						for (int i=0;i<checksName.size();i++){
+							Trip trip = new Trip(getActivity(), new File(path + "/" + checksName.get(i)));
+							trip.setCategory(getActivity(), categories[which]);
+						}
+						dialog.dismiss();
+						loaddata();
+					}
+				});
+				ab.show();
+			}else if (item.getItemId()==R.id.timezone){
+				new UpdateTripTimeZoneTask(checksName).execute();
 			}
 			return true;
 		}
@@ -783,5 +812,95 @@ public class LocalTripsFragment extends Fragment {
 			return null;
 		}
 		
+	}
+	class UpdateTripTimeZoneTask extends AsyncTask<String, String, String>{
+		TextView message;
+		ProgressBar progress;
+		TextView progressMessage;
+		AlertDialog dialog;
+		boolean cancel=false;
+		ArrayList<String> trips;
+		
+		public UpdateTripTimeZoneTask(ArrayList<String> trips){
+			this.trips=trips;
+		}
+		@Override
+		protected void onPreExecute() {
+			// TODO Auto-generated method stub
+			AlertDialog.Builder ab=new AlertDialog.Builder(getActivity());
+			ab.setTitle(getString(R.string.updating));
+			LinearLayout layout=(LinearLayout)getActivity().getLayoutInflater().inflate(R.layout.progressdialog_import_memory, null);
+			message=(TextView)layout.findViewById(R.id.message);
+			progress=(ProgressBar)layout.findViewById(R.id.progressBar);
+			progressMessage=(TextView)layout.findViewById(R.id.progress);
+			ab.setView(layout);
+			ab.setNegativeButton(getString(R.string.cancel), new DialogInterface.OnClickListener() {
+				
+				public void onClick(DialogInterface dialog, int which) {
+					// TODO Auto-generated method stub
+					cancel=true;
+				}
+			});
+			dialog=ab.create();
+			dialog.show();
+			super.onPreExecute();
+		}
+		@Override
+		protected String doInBackground(String... params) {
+			// TODO Auto-generated method stub
+			publishProgress("setMax",String.valueOf(trips.size()));
+			for (int i=0;i<trips.size();i++){
+				if (cancel)break;
+				String tripName=trips.get(i);
+				publishProgress(tripName,String.valueOf(i));
+				try {
+					BufferedReader br=new BufferedReader(new FileReader(new File(path+"/"+tripName+"/"+tripName+".gpx")));
+					String s;
+					while((s=br.readLine())!=null){
+						if (s.startsWith("<trkpt ")){
+							String[] toks=s.split("\"");
+							double lat,lng;
+							if (s.indexOf("lat")>s.indexOf("lon")){
+								lat=Double.parseDouble(toks[3]);
+								lng=Double.parseDouble(toks[1]);
+							}else{
+								lat=Double.parseDouble(toks[1]);
+								lng=Double.parseDouble(toks[3]);
+							}
+							TimeAnalyzer.updateTripTimeZoneFromLatLng(getActivity(), tripName, lat, lng);
+							new File(path+"/"+tripName+"/"+tripName+".gpx.cache").delete();
+							break;
+						}
+					}
+					br.close();
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			return null;
+		}
+		@Override
+		protected void onProgressUpdate(String... values) {
+			// TODO Auto-generated method stub
+			if (values[0].equals("setMax")){
+				progress.setMax(Integer.valueOf(values[1]));
+				progressMessage.setText("0/"+values[1]);
+			}else{
+				message.setText(values[0]);
+				progress.setProgress(Integer.valueOf(values[1]));
+				progressMessage.setText(values[1]+"/"+String.valueOf(progress.getMax()));
+			}
+			super.onProgressUpdate(values);
+		}
+		@Override
+		protected void onPostExecute(String result) {
+			// TODO Auto-generated method stub
+			dialog.dismiss();
+			super.onPostExecute(result);
+		}
 	}
 }

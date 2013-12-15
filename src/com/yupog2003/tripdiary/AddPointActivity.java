@@ -228,6 +228,8 @@ public class AddPointActivity extends Activity implements Button.OnClickListener
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item){
 		if (item.getItemId() == R.id.save) {
+			if (poi==null||time==null||POIMarker==null||location==null)return false;
+			if (POIMarker.getPosition()==null)return false;
 			if (isGpsEnabled){
 				poi.updateBasicInformation(null, time, POIMarker.getPosition().latitude, POIMarker.getPosition().longitude, location.getAltitude());
 			}else{
@@ -235,7 +237,7 @@ public class AddPointActivity extends Activity implements Button.OnClickListener
 			}
 			AddPointActivity.this.finish();
 		}
-		return false;
+		return true;
 	}
 			@Override
 			protected void onActivityResult(int requestCode,int resultCode,Intent data){

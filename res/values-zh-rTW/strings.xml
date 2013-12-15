@@ -292,4 +292,7 @@
     <string name="make_it_public">讓他公開？</string>
     <string name="make_it_public_to_share">為了分享給你朋友，你想要讓這個旅程公開嗎？</string>
     <string name="title_activity_view_trip">ViewTripActivity</string>
+    <string name="move_to_category">移動至類別</string>
+    <string name="choose_a_category">選擇一個類別</string>
+    <string name="no_data_can_be_displayed">沒有資料可以顯示</string>
 </resources>

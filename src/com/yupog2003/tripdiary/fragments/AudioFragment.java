@@ -41,6 +41,14 @@ public class AudioFragment extends Fragment{
 		super.onResume();
 		setAudio();
 	}
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		// TODO Auto-generated method stub
+		super.onSaveInstanceState(outState);
+		if (outState.isEmpty()){
+			outState.putBoolean("bug:fix", true);
+		}
+	}
 	public void setAudio(){
 		layout=(ListView)getView().findViewById(R.id.audiolistview);
 		ViewPointActivity.poi.updateAllFields();

@@ -293,5 +293,8 @@
     <string name="map">Map</string>
     <string name="make_it_public">Make it public?</string>
     <string name="make_it_public_to_share">Would you like to make the trip public in order to share with your friend?</string>
+    <string name="move_to_category">Move to category</string>
+    <string name="choose_a_category">Choose a category</string>
+    <string name="no_data_can_be_displayed">No data can be displayed</string>
 
 </resources>

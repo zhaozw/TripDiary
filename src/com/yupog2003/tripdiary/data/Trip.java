@@ -131,10 +131,16 @@ public class Trip {
 		}
 	}
 	public void refreshPOIs(){
-		File[] poiFiles=dir.listFiles(FileHelper.getDirFilter());
-		this.pois=new POI[poiFiles.length];
-		for (int i=0;i<pois.length;i++){
-			pois[i]=new POI(poiFiles[i]);
+		if (dir!=null){
+			File[] poiFiles=dir.listFiles(FileHelper.getDirFilter());
+			if (poiFiles!=null){
+				this.pois=new POI[poiFiles.length];
+				for (int i=0;i<pois.length;i++){
+					pois[i]=new POI(poiFiles[i]);
+				}
+			}else{
+				this.pois=new POI[0];
+			}
 		}
 	}
 	public void renameTrip(Context context,String name){
