@@ -565,9 +565,9 @@ public class LocalTripsFragment extends Fragment {
 					public void onClick(DialogInterface dialog, int which) {
 						// TODO Auto-generated method stub
 						for (int i=0;i<checksName.size();i++){
-							Trip trip = new Trip(getActivity(), new File(path + "/" + checksName.get(i)));
-							trip.setCategory(getActivity(), categories[which]);
+							tripeditor.putString(checksName.get(i), categories[which]);
 						}
+						tripeditor.commit();
 						dialog.dismiss();
 						loaddata();
 					}

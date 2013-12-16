@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.yupog2003.tripdiary"
-    android:versionCode="93"
-    android:versionName="0.8.5" >
+    android:versionCode="94"
+    android:versionName="0.8.6" >
 
     <uses-sdk
         android:minSdkVersion="14"
@@ -99,7 +99,7 @@
             android:name="com.google.android.maps.v2.API_KEY"
             android:value="AIzaSyCv_ahGgT46nBio7n4UpViFrxsUUZ98DUE" />
         <!-- publish key=  AIzaSyCv_ahGgT46nBio7n4UpViFrxsUUZ98DUE -->
-        <!-- debug key=    AIzaSyCBfSiplQ2PNznpykrCqoYVF9KPxXUQcoM -->
+        <!-- debug key=    AIzaSyB7TjUZYwxnrVWoUZLl_Nt8ddb4Mo9ebOM -->
 
         <service android:name="com.yupog2003.tripdiary.services.SendTripService" >
         </service>

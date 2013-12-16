@@ -697,30 +697,30 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 					publishProgress(getString(R.string.analysis_gpx));
 				ViewTripActivity.trip.getCache();
 			} else {
-				if (isAdded())
+				if (isAdded()){
 					publishProgress(getString(R.string.first_analysis_gpx));
-				ViewTripActivity.trip.updateCacheFromGpxFile(getActivity(), handler);
-				if (option == request_write_location_to_POI) {
-					if (ViewTripActivity.trip.cache != null) {
-						if (isAdded())
+					ViewTripActivity.trip.updateCacheFromGpxFile(getActivity(), handler);
+					if (option == request_write_location_to_POI) {
+						if (ViewTripActivity.trip.cache != null&&isAdded()) {
 							publishProgress(getString(R.string.setup_pois));
-						writeLocationToPoint(ViewTripActivity.trip.cache.lats);
-						// setPOIs();
-					} else {
-						if (isAdded())
+							writeLocationToPoint(ViewTripActivity.trip.cache.lats);
+						} else if (isAdded()){
 							Toast.makeText(getActivity(), getString(R.string.gpx_doesnt_contain_time_information), Toast.LENGTH_LONG).show();
+						}
 					}
+					System.gc();
 				}
-				System.gc();
 			}
 			try {
-				final int latsSize = ViewTripActivity.trip.cache.lats.size();
-				lat = new LatLng[latsSize];
-				for (int i = 0; i < latsSize; i++) {
-					MyLatLng2 latlng = ViewTripActivity.trip.cache.lats.get(i);
-					lat[i] = new LatLng(latlng.getLatitude(), latlng.getLongitude());
+				if (ViewTripActivity.trip.cache!=null){
+					final int latsSize = ViewTripActivity.trip.cache.lats.size();
+					lat = new LatLng[latsSize];
+					for (int i = 0; i < latsSize; i++) {
+						MyLatLng2 latlng = ViewTripActivity.trip.cache.lats.get(i);
+						lat[i] = new LatLng(latlng.getLatitude(), latlng.getLongitude());
+					}
+					System.gc();
 				}
-				System.gc();
 			} catch (Exception e) {
 				ViewTripActivity.trip.cacheFile.delete();
 				e.printStackTrace();

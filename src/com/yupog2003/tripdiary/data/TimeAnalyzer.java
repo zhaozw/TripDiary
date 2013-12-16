@@ -155,7 +155,9 @@ public class TimeAnalyzer {
 	}
 
 	public static String getTripTimeZone(Context context, String tripName) {
+		if (context==null)return Time.getCurrentTimezone();
 		SharedPreferences preference = context.getSharedPreferences("tripTimezone", Context.MODE_PRIVATE);
+		if (preference==null)return Time.getCurrentTimezone();
 		return preference.getString(tripName, Time.getCurrentTimezone());
 	}
 
@@ -164,6 +166,7 @@ public class TimeAnalyzer {
 	}
 
 	public static void updateTripTimeZone(Context context, String tripName, String timezone) {
+		if (context==null)return;
 		SharedPreferences preference = context.getSharedPreferences("tripTimezone", Context.MODE_PRIVATE);
 		SharedPreferences.Editor editor = preference.edit();
 		editor.putString(tripName, timezone);

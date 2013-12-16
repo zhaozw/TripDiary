@@ -43,6 +43,7 @@ public class CostBarChartFragment extends Fragment{
 		colors=new int[array.length()];
 		for (int i=0;i<colors.length;i++)colors[i]=array.getColor(i, 0);
 		totals=new float[array.length()];
+		array.recycle();
 		switch(option){
 		case ViewCostActivity.optionPOI:
 			File file=new File(path+"/costs");

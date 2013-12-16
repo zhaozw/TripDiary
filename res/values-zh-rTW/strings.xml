@@ -295,4 +295,5 @@
     <string name="move_to_category">移動至類別</string>
     <string name="choose_a_category">選擇一個類別</string>
     <string name="no_data_can_be_displayed">沒有資料可以顯示</string>
+    <string name="cannot_start_media_recorder_due_to_unknowm_error">不明原因無法啟動Media Recorder</string>
 </resources>

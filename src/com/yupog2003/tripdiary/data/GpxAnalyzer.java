@@ -73,7 +73,7 @@ public class GpxAnalyzer {
 			cache=new TrackCache();
 			saveTrack(lats);
 			saveStatistics(times, totaldistance, maxSpeed, totalAltitude, maxAltitude, minAltitude);
-			saveGraph(context, gpxPath+".graph", lats, speeds,contextHandler);
+			saveGraph(context, gpxPath+".graph", lats, speeds, contextHandler);
 			saveCache(gpxPath+".cache");
 		}
 	}
@@ -133,9 +133,6 @@ public class GpxAnalyzer {
 		public GPXHandler(Context context,String path){
 			this.context=context;
 			this.path=path;
-		}
-		@Override
-		public void startDocument(){
 			lats=new ArrayList<MyLatLng2>();
 			times=new ArrayList<Time>();
 			sb=new StringBuffer();
@@ -144,6 +141,10 @@ public class GpxAnalyzer {
 			Time tempTime=new Time(Time.TIMEZONE_UTC);
 			tempTime.switchTimezone(timezone);
 			timeZoneOffset=tempTime.gmtoff;
+		}
+		@Override
+		public void startDocument(){
+			
 		}
 		@Override
 		public void startElement(String uri,String localName,String name,Attributes attributes)throws SAXException{
@@ -248,6 +249,7 @@ public class GpxAnalyzer {
 		cache.minAltitude=minAltitude;
 	}
 	private void saveGraph(final Context context,final String path,final ArrayList<MyLatLng2> lats,final ArrayList<Float> speeds,Handler handler){
+		if (context==null)return;
 		final XYMultipleSeriesDataset dataset=new XYMultipleSeriesDataset();
 		XYSeries altitudeSeries=new XYSeries(context.getString(R.string.Altitude),0);
 		final int latsSize=lats.size();
@@ -285,6 +287,7 @@ public class GpxAnalyzer {
 		String fileName=new File(path).getName();
 		render.setChartTitle(fileName.substring(0, fileName.indexOf(".")));
 		render.setChartTitleTextSize(40);
+		if (handler==null)return;
 		handler.post(new Runnable(){
 
 			public void run() {

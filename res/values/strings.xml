@@ -296,5 +296,6 @@
     <string name="move_to_category">Move to category</string>
     <string name="choose_a_category">Choose a category</string>
     <string name="no_data_can_be_displayed">No data can be displayed</string>
+    <string name="cannot_start_media_recorder_due_to_unknowm_error">Cannot start media recorder due to unknown error</string>
 
 </resources>

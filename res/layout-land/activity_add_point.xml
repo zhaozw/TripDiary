@@ -8,57 +8,53 @@
         android:id="@+id/addmaplayout"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:layout_toRightOf="@+id/linearLayout2" 
-        android:orientation="horizontal"/>
+        android:layout_toRightOf="@+id/linearLayout2"
+        android:orientation="horizontal" />
 
     <LinearLayout
+        android:id="@+id/linearLayout2"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_alignParentLeft="true"
-        android:id="@+id/linearLayout2"  
-        android:orientation="vertical">
+        android:orientation="vertical" >
 
         <ImageButton
             android:id="@+id/takepicture"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="0.2" 
-            android:src="@drawable/ic_takepicture"
+            android:layout_weight="0.2"
             android:contentDescription="@string/imagebutton_description"
-            style="?android:attr/borderlessButtonStyle"
-            />
+            android:src="@drawable/ic_takepicture" />
 
         <ImageButton
             android:id="@+id/takevideo"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="0.2" 
-            android:src="@drawable/ic_takevideo"
+            android:layout_weight="0.2"
             android:contentDescription="@string/imagebutton_description"
-            style="?android:attr/borderlessButtonStyle"
-            />
+            android:src="@drawable/ic_takevideo" />
 
-        
         <ImageButton
             android:id="@+id/taketext"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="0.2" 
-            android:src="@drawable/ic_taketext"
+            android:layout_weight="0.2"
             android:contentDescription="@string/imagebutton_description"
-            style="?android:attr/borderlessButtonStyle"
-            />
+            android:src="@drawable/ic_taketext" />
 
         <ImageButton
             android:id="@+id/takeaudio"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="0.2" 
-            android:src="@drawable/ic_takeaudio"
+            android:layout_weight="0.2"
             android:contentDescription="@string/imagebutton_description"
-            style="?android:attr/borderlessButtonStyle"
-            />
-						<ImageButton
+            android:src="@drawable/ic_takeaudio" />
+
+        <ImageButton
             android:id="@+id/takepaint"
             style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
@@ -66,17 +62,15 @@
             android:layout_weight="0.2"
             android:contentDescription="@string/imagebutton_description"
             android:src="@drawable/ic_takepaint" />
+
         <ImageButton
-            android:id="@+id/save"
+            android:id="@+id/takemoney"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="0.2"
-            android:src="@drawable/ic_save"
             android:contentDescription="@string/imagebutton_description"
-            style="?android:attr/borderlessButtonStyle"/>
-
+            android:src="@drawable/ic_money" />
     </LinearLayout>
-
-    
 
 </RelativeLayout>

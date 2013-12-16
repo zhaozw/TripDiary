@@ -296,4 +296,5 @@
     <string name="move_to_category">移动至类别</string>
     <string name="choose_a_category">选择一个类别</string>
     <string name="no_data_can_be_displayed">没有资料可以显示</string>
+    <string name="cannot_start_media_recorder_due_to_unknowm_error">不明原因无法启动Media Recorder</string>
 </resources>
