@@ -128,7 +128,7 @@ public class RemoteTripsFragment extends Fragment {
 		@Override
 		protected Trip[] doInBackground(String... params) {
 			// TODO Auto-generated method stub
-			String url = phpURL + "?rootPath=Trips/" + account;
+			String url = phpURL + "?rootPath=Trips/" + account+"&token="+token;
 			HttpClient client = new DefaultHttpClient();
 			HttpGet get = new HttpGet(url);
 			try {
@@ -289,7 +289,8 @@ public class RemoteTripsFragment extends Fragment {
 			// TODO Auto-generated method stub
 			String tripPath=trips[position].path;
 			String tripName=trips[position].name;
-			String uri=MainActivity.serverURL+"/Trip.html?tripname="+tripName+"&trippath="+tripPath;
+			String tripPublic=trip_option==option_public?"yes":"no";
+			String uri=MainActivity.serverURL+"/Trip.html?tripname="+tripName+"&trippath="+tripPath+"&public="+tripPublic;
 			Intent intent=new Intent(Intent.ACTION_VIEW);
 			intent.setData(Uri.parse(uri));
 			startActivity(intent);

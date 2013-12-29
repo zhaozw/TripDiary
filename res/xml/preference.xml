@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
 
-    <PreferenceCategory android:title="@string/trip_setting" >
+    <PreferenceCategory android:title="@string/display_setting" >
         <yuku.ambilwarna.widget.AmbilWarnaPreference
             android:defaultValue="0xff6699cc"
             android:icon="@drawable/ic_color"
@@ -120,6 +120,19 @@
             android:icon="@drawable/ic_path"
             android:key="rootpath"
             android:title="@string/root_path" />
+
+        <!--
+             <ListPreference
+            android:defaultValue="0"
+            android:dialogTitle="@string/the_method_used_to_analyze_gpx_file"
+            android:entries="@array/analysis_methods"
+            android:entryValues="@array/analysis_methods_value"
+            android:key="alanysis_gpx_method"
+            android:icon="@drawable/ic_analysis"
+            android:summary="@string/the_method_used_to_analyze_gpx_file"
+            android:title="@string/analysis_method" />
+        -->
+
         <Preference
             android:icon="@drawable/ic_backup_category"
             android:key="backupsetting"
@@ -136,7 +149,6 @@
             android:icon="@drawable/ic_help"
             android:key="help"
             android:title="@string/help" />
-        
     </PreferenceCategory>
 
 </PreferenceScreen>

@@ -9,7 +9,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import javax.xml.parsers.ParserConfigurationException;
-
 import org.xml.sax.SAXException;
 
 import android.content.Context;
@@ -30,20 +29,21 @@ public class Trip {
 	public String tripName;
 	public String category;
 	public String timezone;
-	
-	public Trip(Context context,File dir){
-		this.dir=dir;
-		if (!dir.exists()){
+	public GpxAnalyzer2 analyzer;
+
+	public Trip(Context context, File dir) {
+		this.dir = dir;
+		if (!dir.exists()) {
 			dir.mkdirs();
 			TimeAnalyzer.updateTripTimeZone(context, dir.getName(), Time.getCurrentTimezone());
 		}
-		this.context=context;
+		this.context = context;
 		refreshAllFields();
 	}
-	
-	public void refreshAllFields(){
-		this.gpxFile=new File(dir.getPath()+"/"+dir.getName()+".gpx");
-		if (!gpxFile.exists()){
+
+	public void refreshAllFields() {
+		this.gpxFile = new File(dir.getPath() + "/" + dir.getName() + ".gpx");
+		if (!gpxFile.exists()) {
 			try {
 				gpxFile.createNewFile();
 			} catch (IOException e) {
@@ -51,10 +51,10 @@ public class Trip {
 				e.printStackTrace();
 			}
 		}
-		this.cacheFile=new File(gpxFile.getPath()+".cache");
-		this.graphicFile=new File(gpxFile.getPath()+".graph");
-		this.noteFile=new File(dir.getPath()+"/note");
-		if (!noteFile.exists()){
+		this.cacheFile = new File(gpxFile.getPath() + ".cache");
+		this.graphicFile = new File(gpxFile.getPath() + ".graph");
+		this.noteFile = new File(dir.getPath() + "/note");
+		if (!noteFile.exists()) {
 			try {
 				noteFile.createNewFile();
 			} catch (IOException e) {
@@ -63,14 +63,14 @@ public class Trip {
 			}
 		}
 		refreshPOIs();
-		
 		try {
-			BufferedReader br=new BufferedReader(new FileReader(noteFile));
-			String s;StringBuffer sb=new StringBuffer();
-			while((s=br.readLine())!=null){
-				sb.append(s+"\n");
+			BufferedReader br = new BufferedReader(new FileReader(noteFile));
+			String s;
+			StringBuffer sb = new StringBuffer();
+			while ((s = br.readLine()) != null) {
+				sb.append(s + "\n");
 			}
-			note=sb.toString();
+			note = sb.toString();
 			br.close();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -79,24 +79,43 @@ public class Trip {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		this.tripName=dir.getName();
-		SharedPreferences p=context.getSharedPreferences("trip", Context.MODE_PRIVATE);
-		category=p.getString(tripName, "nocategory");
-		timezone=TimeAnalyzer.getTripTimeZone(context, tripName);
+		this.tripName = dir.getName();
+		SharedPreferences p = context.getSharedPreferences("trip", Context.MODE_PRIVATE);
+		category = p.getString(tripName, "nocategory");
+		timezone = TimeAnalyzer.getTripTimeZone(context, tripName);
 	}
-	public void getCache(){
-		try{
-			this.cache=(TrackCache)FileHelper.readObjectFromFile(cacheFile);
-		}catch(Exception e){
-			this.cache=null;
+
+	public void getCache(GpxAnalyzer2.ProgressChangedListener listener) {
+		try {
+			this.cache = (TrackCache) FileHelper.readObjectFromFile(cacheFile,listener);
+		} catch (Exception e) {
+			this.cache = null;
 			e.printStackTrace();
 		}
 	}
-	public void deleteCache(){
+
+	public void getCache2(Context context, Handler handler,GpxAnalyzer2.ProgressChangedListener listener) {
+		try {
+			analyzer=new GpxAnalyzer2(gpxFile.getPath(), context, handler);
+			analyzer.setOnProgressChangedListener(listener);
+			analyzer.analyze();
+			cache = analyzer.getCache();
+			analyzer=null;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	public void stopGetCache(){
+		if (analyzer!=null){
+			analyzer.stop();
+		}
+	}
+	public void deleteCache() {
 		cacheFile.delete();
 		graphicFile.delete();
 	}
-	public void updateCacheFromGpxFile(Context context,Handler handler){
+
+	public void updateCacheFromGpxFile(Context context, Handler handler,GpxAnalyzer2.ProgressChangedListener listener) {
 		try {
 			new GpxAnalyzer(gpxFile.getPath(), context, handler);
 		} catch (ParserConfigurationException e) {
@@ -109,74 +128,79 @@ public class Trip {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		try{
-			this.cache=(TrackCache)FileHelper.readObjectFromFile(cacheFile);
-		}catch(Exception e){
-			this.cache=null;
+		try {
+			this.cache = (TrackCache) FileHelper.readObjectFromFile(cacheFile,listener);
+		} catch (Exception e) {
+			this.cache = null;
 			e.printStackTrace();
 		}
 	}
-	public void updateNote(String note){
-		if (note!=null){
+
+	public void updateNote(String note) {
+		if (note != null) {
 			try {
-				BufferedWriter bw=new BufferedWriter(new FileWriter(noteFile,false));
+				BufferedWriter bw = new BufferedWriter(new FileWriter(noteFile, false));
 				bw.write(note);
 				bw.flush();
 				bw.close();
-				this.note=note;
+				this.note = note;
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 	}
-	public void refreshPOIs(){
-		if (dir!=null){
-			File[] poiFiles=dir.listFiles(FileHelper.getDirFilter());
-			if (poiFiles!=null){
-				this.pois=new POI[poiFiles.length];
-				for (int i=0;i<pois.length;i++){
-					pois[i]=new POI(poiFiles[i]);
+
+	public void refreshPOIs() {
+		if (dir != null) {
+			File[] poiFiles = dir.listFiles(FileHelper.getDirFilter());
+			if (poiFiles != null) {
+				this.pois = new POI[poiFiles.length];
+				for (int i = 0; i < pois.length; i++) {
+					pois[i] = new POI(poiFiles[i]);
 				}
-			}else{
-				this.pois=new POI[0];
+			} else {
+				this.pois = new POI[0];
 			}
 		}
 	}
-	public void renameTrip(Context context,String name){
-		SharedPreferences p=context.getSharedPreferences("trip", Context.MODE_PRIVATE);
-		SharedPreferences.Editor editor=p.edit();
+
+	public void renameTrip(Context context, String name) {
+		SharedPreferences p = context.getSharedPreferences("trip", Context.MODE_PRIVATE);
+		SharedPreferences.Editor editor = p.edit();
 		editor.remove(tripName);
 		editor.putString(name, category);
 		editor.commit();
-		p=context.getSharedPreferences("tripTimezone", Context.MODE_PRIVATE);
-		editor=p.edit();
+		p = context.getSharedPreferences("tripTimezone", Context.MODE_PRIVATE);
+		editor = p.edit();
 		editor.remove(tripName);
 		editor.putString(name, timezone);
 		editor.commit();
-		String gpxName=gpxFile.getName();
-		String cacheName=cacheFile.getName();
-		String graphicName=graphicFile.getName();
-		dir.renameTo(new File(dir.getParent()+"/"+name));
-		dir=new File(dir.getParent()+"/"+name);
-		gpxFile=new File(dir.getPath()+"/"+gpxName);
-		gpxFile.renameTo(new File(dir.getPath()+"/"+name+".gpx"));
-		gpxFile=new File(dir.getPath()+"/"+name+".gpx");
-		cacheFile=new File(dir.getPath()+"/"+cacheName);
-		cacheFile.renameTo(new File(gpxFile.getPath()+".cache"));
-		cacheFile=new File(gpxFile.getPath()+".cache");
-		graphicFile=new File(dir.getPath()+"/"+graphicName);
-		graphicFile.renameTo(new File(gpxFile.getPath()+".graph"));
-		graphicFile=new File(gpxFile.getPath()+".graph");
+		String gpxName = gpxFile.getName();
+		String cacheName = cacheFile.getName();
+		String graphicName = graphicFile.getName();
+		dir.renameTo(new File(dir.getParent() + "/" + name));
+		dir = new File(dir.getParent() + "/" + name);
+		gpxFile = new File(dir.getPath() + "/" + gpxName);
+		gpxFile.renameTo(new File(dir.getPath() + "/" + name + ".gpx"));
+		gpxFile = new File(dir.getPath() + "/" + name + ".gpx");
+		cacheFile = new File(dir.getPath() + "/" + cacheName);
+		cacheFile.renameTo(new File(gpxFile.getPath() + ".cache"));
+		cacheFile = new File(gpxFile.getPath() + ".cache");
+		graphicFile = new File(dir.getPath() + "/" + graphicName);
+		graphicFile.renameTo(new File(gpxFile.getPath() + ".graph"));
+		graphicFile = new File(gpxFile.getPath() + ".graph");
 		refreshAllFields();
 	}
-	public void setCategory(Context context,String category){
-		this.category=category;
-		SharedPreferences.Editor editor=context.getSharedPreferences("trip", Context.MODE_PRIVATE).edit();
+
+	public void setCategory(Context context, String category) {
+		this.category = category;
+		SharedPreferences.Editor editor = context.getSharedPreferences("trip", Context.MODE_PRIVATE).edit();
 		editor.putString(tripName, category);
 		editor.commit();
 	}
-	public void deleteSelf(){
+
+	public void deleteSelf() {
 		FileHelper.deletedir(dir.getPath());
 	}
 }

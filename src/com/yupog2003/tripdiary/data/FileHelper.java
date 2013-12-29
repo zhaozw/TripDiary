@@ -21,6 +21,9 @@ import java.util.Comparator;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+
+import org.apache.commons.io.input.CountingInputStream;
+
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.yupog2003.tripdiary.R;
@@ -37,23 +40,24 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 public class FileHelper {
-	public static FilenameFilter getDirFilter(){
-		return new FilenameFilter(){
+	public static FilenameFilter getDirFilter() {
+		return new FilenameFilter() {
 
 			public boolean accept(File dir, String filename) {
 				// TODO Auto-generated method stub
-				return new File(dir,filename).isDirectory()&&!filename.startsWith(".");
+				return new File(dir, filename).isDirectory() && !filename.startsWith(".");
 			}
-			
+
 		};
 	}
-	public static void copyFile(File infile,File outfile){
-		byte [] buffer=new byte[4096];
-		int size=-1;
+
+	public static void copyFile(File infile, File outfile) {
+		byte[] buffer = new byte[4096];
+		int size = -1;
 		try {
-			FileInputStream fis=new FileInputStream(infile);
-			FileOutputStream fos=new FileOutputStream(outfile);
-			while((size=fis.read(buffer,0,buffer.length))!=-1){
+			FileInputStream fis = new FileInputStream(infile);
+			FileOutputStream fos = new FileOutputStream(outfile);
+			while ((size = fis.read(buffer, 0, buffer.length)) != -1) {
 				fos.write(buffer, 0, size);
 			}
 			fis.close();
@@ -66,25 +70,29 @@ public class FileHelper {
 			e.printStackTrace();
 		}
 	}
-	public static void deletedir(String path){
-    	File file=new File(path);
-    	File [] files=file.listFiles();
-    	for (int i=0;i<files.length;i++){
-    		if (files[i].isDirectory()){
-    			deletedir(files[i].getPath());
-    		}
-    		files[i].delete();
-    	}
-    	file.delete();
-    }
-	public static void concateFile(String file1,String file2){
+
+	public static void deletedir(String path) {
+		File file = new File(path);
+		File[] files = file.listFiles();
+		for (int i = 0; i < files.length; i++) {
+			if (files[i].isDirectory()) {
+				deletedir(files[i].getPath());
+			}
+			files[i].delete();
+		}
+		file.delete();
+	}
+
+	public static void concateFile(String file1, String file2) {
 		try {
-			BufferedWriter bw=new BufferedWriter(new FileWriter(file1,true));
-			BufferedReader br=new BufferedReader(new FileReader(file2));
-			String s;bw.write("\n");bw.flush();
-			while((s=br.readLine())!=null){
-				if (s.contains("<trkpt")||s.contains("<ele>")||s.contains("<time>")||s.contains("</trkpt>")){
-					bw.write(s+"\n");
+			BufferedWriter bw = new BufferedWriter(new FileWriter(file1, true));
+			BufferedReader br = new BufferedReader(new FileReader(file2));
+			String s;
+			bw.write("\n");
+			bw.flush();
+			while ((s = br.readLine()) != null) {
+				if (s.contains("<trkpt") || s.contains("<ele>") || s.contains("<time>") || s.contains("</trkpt>")) {
+					bw.write(s + "\n");
 					bw.flush();
 				}
 			}
@@ -95,61 +103,70 @@ public class FileHelper {
 			e.printStackTrace();
 		}
 	}
+
 	@SuppressLint("DefaultLocale")
-	public static String getMIMEtype(String filename){
-		if (!filename.contains("."))return "file/*";
-		String extension=filename.substring(filename.lastIndexOf(".")+1);
-		if (extension==null)return "file/*";
-		String mime=MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.toLowerCase());
-		if (mime==null)return "file/*";
+	public static String getMIMEtype(String filename) {
+		if (!filename.contains("."))
+			return "file/*";
+		String extension = filename.substring(filename.lastIndexOf(".") + 1);
+		if (extension == null)
+			return "file/*";
+		String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.toLowerCase());
+		if (mime == null)
+			return "file/*";
 		return mime;
 	}
-	
-	public static String getMimeFromFile(File file){
+
+	public static String getMimeFromFile(File file) {
 		return getMIMEtype(file.getName());
 	}
-	
-	public static boolean isPicture(File file){
-		return file.isFile()&&getMimeFromFile(file).startsWith("image");
+
+	public static boolean isPicture(File file) {
+		return file.isFile() && getMimeFromFile(file).startsWith("image");
 	}
-	public static boolean isVideo(File file){
-		return file.isFile()&&getMimeFromFile(file).startsWith("video");
+
+	public static boolean isVideo(File file) {
+		return file.isFile() && getMimeFromFile(file).startsWith("video");
 	}
-	public static boolean isAudio(File file){
-		return file.isFile()&&getMimeFromFile(file).startsWith("audio");
+
+	public static boolean isAudio(File file) {
+		return file.isFile() && getMimeFromFile(file).startsWith("audio");
 	}
-	
-	public static FileFilter getPictureFileFilter(){
+
+	public static FileFilter getPictureFileFilter() {
 		return new FileFilter() {
-			
+
 			public boolean accept(File pathname) {
 				// TODO Auto-generated method stub
 				return isPicture(pathname);
 			}
 		};
 	}
-	public static FileFilter getVideoFileFilter(){
+
+	public static FileFilter getVideoFileFilter() {
 		return new FileFilter() {
-			
+
 			public boolean accept(File pathname) {
 				// TODO Auto-generated method stub
 				return isVideo(pathname);
 			}
 		};
 	}
-	public static FileFilter getAudioFileFilter(){
+
+	public static FileFilter getAudioFileFilter() {
 		return new FileFilter() {
-			
+
 			public boolean accept(File pathname) {
 				// TODO Auto-generated method stub
 				return isAudio(pathname);
 			}
 		};
 	}
-	public static void saveObjectToFile(Object obj,File file){
+
+	public static void saveObjectToFile(Object obj, File file) {
 		try {
-			FileOutputStream fos=new FileOutputStream(file);
-			ObjectOutputStream oos=new ObjectOutputStream(fos);
+			FileOutputStream fos = new FileOutputStream(file);
+			ObjectOutputStream oos = new ObjectOutputStream(fos);
 			oos.writeObject(obj);
 			oos.flush();
 			oos.close();
@@ -162,11 +179,33 @@ public class FileHelper {
 			e.printStackTrace();
 		}
 	}
-	public static Object readObjectFromFile(File file){
-		Object result=new Object();
+
+	public static Object readObjectFromFile(File file,final GpxAnalyzer2.ProgressChangedListener listener) {
+		Object result = new Object();
 		try {
-			ObjectInputStream ois=new ObjectInputStream(new FileInputStream(file));
-			result=ois.readObject();
+			FileInputStream fis = new FileInputStream(file);
+			final CountingInputStream cis = new CountingInputStream(fis);
+			ObjectInputStream ois = new ObjectInputStream(cis);
+			final long fileSize=file.length();
+			if (listener!=null){
+				new Thread(new Runnable() {
+					
+					public void run() {
+						// TODO Auto-generated method stub
+						long count;
+						while((count=cis.getByteCount())<fileSize){
+							listener.onProgressChanged(count);
+							try {
+								Thread.sleep(100);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+					}
+				}).start();
+			}
+			result = ois.readObject();
 			ois.close();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -180,10 +219,11 @@ public class FileHelper {
 		}
 		return result;
 	}
-	public static void zip(File source,File zip){
+
+	public static void zip(File source, File zip) {
 		try {
-			ZipOutputStream zos=new ZipOutputStream(new FileOutputStream(zip));
-			dozip(source,zos,source.getName());
+			ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zip));
+			dozip(source, zos, source.getName());
 			zos.close();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -193,50 +233,55 @@ public class FileHelper {
 			e.printStackTrace();
 		}
 	}
-	private static void dozip(File from,ZipOutputStream zos,String entry){
-			try {
-				if (from.isDirectory()){
-					
-					zos.putNextEntry(new ZipEntry(entry+"/"));
-					zos.closeEntry();
-					File[] files=from.listFiles();
-					for (int i=0;i<files.length;i++){
-						dozip(files[i],zos,entry+"/"+files[i].getName());
-					}
-				}else{
-					zos.putNextEntry(new ZipEntry(entry));
-					byte [] buffer=new byte[4096];int count=-1;
-					BufferedInputStream bis=new BufferedInputStream(new FileInputStream(from));
-					while((count=bis.read(buffer, 0, 4096))!=-1){
-						zos.write(buffer, 0, count);
-					}
-					bis.close();
-					zos.closeEntry();
-				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	}
-	public static void unZip(String zip,String target){
-		BufferedOutputStream bos=null;
+
+	private static void dozip(File from, ZipOutputStream zos, String entry) {
 		try {
-			ZipInputStream zis=new ZipInputStream(new BufferedInputStream(new FileInputStream(zip)));
-			ZipEntry entry;String strEntry;int count;
-			while((entry=zis.getNextEntry())!=null){
-				byte[] data=new byte[4096];
-				strEntry=entry.getName();
-				if (entry.isDirectory()){
-					new File(target+strEntry).mkdirs();
-				}else{
-					File entryFile=new File(target+strEntry);
-					File entryDir=new File(entryFile.getParent());
-					if (!entryDir.exists()){
+			if (from.isDirectory()) {
+
+				zos.putNextEntry(new ZipEntry(entry + "/"));
+				zos.closeEntry();
+				File[] files = from.listFiles();
+				for (int i = 0; i < files.length; i++) {
+					dozip(files[i], zos, entry + "/" + files[i].getName());
+				}
+			} else {
+				zos.putNextEntry(new ZipEntry(entry));
+				byte[] buffer = new byte[4096];
+				int count = -1;
+				BufferedInputStream bis = new BufferedInputStream(new FileInputStream(from));
+				while ((count = bis.read(buffer, 0, 4096)) != -1) {
+					zos.write(buffer, 0, count);
+				}
+				bis.close();
+				zos.closeEntry();
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public static void unZip(String zip, String target) {
+		BufferedOutputStream bos = null;
+		try {
+			ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new FileInputStream(zip)));
+			ZipEntry entry;
+			String strEntry;
+			int count;
+			while ((entry = zis.getNextEntry()) != null) {
+				byte[] data = new byte[4096];
+				strEntry = entry.getName();
+				if (entry.isDirectory()) {
+					new File(target + strEntry).mkdirs();
+				} else {
+					File entryFile = new File(target + strEntry);
+					File entryDir = new File(entryFile.getParent());
+					if (!entryDir.exists()) {
 						entryDir.mkdirs();
 					}
-					FileOutputStream fos=new FileOutputStream(entryFile);
-					bos=new BufferedOutputStream(fos,4096);
-					while((count=zis.read(data, 0, 4096))!=-1){
+					FileOutputStream fos = new FileOutputStream(entryFile);
+					bos = new BufferedOutputStream(fos, 4096);
+					while ((count = zis.read(data, 0, 4096)) != -1) {
 						bos.write(data, 0, count);
 					}
 					bos.flush();
@@ -252,25 +297,26 @@ public class FileHelper {
 			e.printStackTrace();
 		}
 	}
-	public static void converToPlayableKml(File gpxFile,File kmlFile){
+
+	public static void converToPlayableKml(File gpxFile, File kmlFile) {
 		try {
-			BufferedReader br=new BufferedReader(new FileReader(gpxFile));
-			StringBuffer sb=new StringBuffer();
+			BufferedReader br = new BufferedReader(new FileReader(gpxFile));
+			StringBuffer sb = new StringBuffer();
 			String s;
-			while((s=br.readLine())!=null){
-				if (s.contains("<trkpt")){
-					String [] toks=s.split("\"");
-					if (s.indexOf("lat")>s.indexOf("lon")){
-						sb.append("<gx:coord>"+toks[1]+" "+toks[3]+" 0</gx:coord>\n");
-					}else{
-						sb.append("<gx:coord>"+toks[3]+" "+toks[1]+" 0</gx:coord>\n");
+			while ((s = br.readLine()) != null) {
+				if (s.contains("<trkpt")) {
+					String[] toks = s.split("\"");
+					if (s.indexOf("lat") > s.indexOf("lon")) {
+						sb.append("<gx:coord>" + toks[1] + " " + toks[3] + " 0</gx:coord>\n");
+					} else {
+						sb.append("<gx:coord>" + toks[3] + " " + toks[1] + " 0</gx:coord>\n");
 					}
-				}else if (s.contains("<time>")){
-					sb.append("<when>"+s.substring(s.indexOf(">")+1, s.lastIndexOf("<"))+"</when>\n");
+				} else if (s.contains("<time>")) {
+					sb.append("<when>" + s.substring(s.indexOf(">") + 1, s.lastIndexOf("<")) + "</when>\n");
 				}
 			}
 			br.close();
-			BufferedWriter bw=new BufferedWriter(new FileWriter(kmlFile,false));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(kmlFile, false));
 			bw.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 			bw.write("<kml xmlns=\"http://www.opengis.net/kml/2.2\"\n");
 			bw.write("xmlns:gx=\"http://www.google.com/kml/ext/2.2\">\n");
@@ -292,35 +338,36 @@ public class FileHelper {
 			e.printStackTrace();
 		}
 	}
-	public static void convertToKml(ArrayList<Marker> POIs,LatLng [] track,File kmlFile,String note){
-		String name=kmlFile.getName();
-		name=name.substring(0, name.lastIndexOf("."));
+
+	public static void convertToKml(ArrayList<Marker> POIs, LatLng[] track, File kmlFile, String note) {
+		String name = kmlFile.getName();
+		name = name.substring(0, name.lastIndexOf("."));
 		try {
-			BufferedWriter bw=new BufferedWriter(new FileWriter(kmlFile,false));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(kmlFile, false));
 			bw.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 			bw.write("<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n");
 			bw.write("<Document>\n");
-			bw.write("<name>"+name+"</name>\n");
-			bw.write("<description>"+note+"</description>\n");
+			bw.write("<name>" + name + "</name>\n");
+			bw.write("<description>" + note + "</description>\n");
 			bw.write("<Folder>\n");
 			bw.write("<Placemark>\n");
-			bw.write("<name>"+name+"</name>\n");
+			bw.write("<name>" + name + "</name>\n");
 			bw.write("<description>Generated by TripDiary</description>\n");
 			bw.write("<LineString>\n");
 			bw.write("<coordinates>");
-			for (int i=0;i<track.length;i++){
-				bw.write(" "+String.valueOf(track[i].longitude)+","+String.valueOf(track[i].latitude)+",0\n");
+			for (int i = 0; i < track.length; i++) {
+				bw.write(" " + String.valueOf(track[i].longitude) + "," + String.valueOf(track[i].latitude) + ",0\n");
 			}
 			bw.write("</coordinates>\n");
 			bw.write("</LineString>\n");
 			bw.write("</Placemark>\n");
-			final int POIsSize=POIs.size();
-			for (int i=0;i<POIsSize;i++){
+			final int POIsSize = POIs.size();
+			for (int i = 0; i < POIsSize; i++) {
 				bw.write("<Placemark>\n");
-				bw.write("<name>"+POIs.get(i).getTitle()+"</name>\n");
-				bw.write("<description>"+POIs.get(i).getSnippet()+"</description>\n");
+				bw.write("<name>" + POIs.get(i).getTitle() + "</name>\n");
+				bw.write("<description>" + POIs.get(i).getSnippet() + "</description>\n");
 				bw.write("<Point>\n");
-				bw.write("<coordinates>"+String.valueOf(POIs.get(i).getPosition().longitude)+","+String.valueOf(POIs.get(i).getPosition().latitude)+",0</coordinates>\n");
+				bw.write("<coordinates>" + String.valueOf(POIs.get(i).getPosition().longitude) + "," + String.valueOf(POIs.get(i).getPosition().latitude) + ",0</coordinates>\n");
 				bw.write("</Point>\n");
 				bw.write("</Placemark>\n");
 			}
@@ -334,26 +381,28 @@ public class FileHelper {
 			e.printStackTrace();
 		}
 	}
-	
-	public static class DirAdapter extends BaseAdapter implements OnItemClickListener{
-		
+
+	public static class DirAdapter extends BaseAdapter implements OnItemClickListener {
+
 		File root;
 		File[] dirs;
 		Context context;
 		boolean showHideDir;
-		
-		public DirAdapter(Context context,boolean showHideDir,File root){
-			this.context=context;
-			this.showHideDir=showHideDir;
+
+		public DirAdapter(Context context, boolean showHideDir, File root) {
+			this.context = context;
+			this.showHideDir = showHideDir;
 			setDir(root);
 		}
-		public void setDir(File root){
-			this.root=root;
-			File[] dirss=root.listFiles(new FileFilter() {
-				
+
+		public void setDir(File root) {
+			this.root = root;
+			File[] dirss = root.listFiles(new FileFilter() {
+
 				public boolean accept(File pathname) {
 					// TODO Auto-generated method stub
-					if (!showHideDir&&pathname.getName().startsWith("."))return false;
+					if (!showHideDir && pathname.getName().startsWith("."))
+						return false;
 					return pathname.isDirectory();
 				}
 			});
@@ -364,16 +413,18 @@ public class FileHelper {
 					return lhs.getName().compareToIgnoreCase(rhs.getName());
 				}
 			});
-			dirs=new File[dirss.length+2];
-			dirs[0]=root;
-			dirs[1]=root.getParentFile();
-			for (int i=2;i<dirs.length;i++){
-				dirs[i]=dirss[i-2];
+			dirs = new File[dirss.length + 2];
+			dirs[0] = root;
+			dirs[1] = root.getParentFile();
+			for (int i = 2; i < dirs.length; i++) {
+				dirs[i] = dirss[i - 2];
 			}
 		}
-		public File getRoot(){
+
+		public File getRoot() {
 			return root;
 		}
+
 		public int getCount() {
 			// TODO Auto-generated method stub
 			return dirs.length;
@@ -391,23 +442,26 @@ public class FileHelper {
 
 		public View getView(int position, View convertView, ViewGroup viewGroup) {
 			// TODO Auto-generated method stub
-			TextView textView=new TextView(context);
+			TextView textView = new TextView(context);
 			textView.setTextAppearance(context, android.R.style.TextAppearance_Large);
-			textView.setCompoundDrawablesWithIntrinsicBounds(position>1?R.drawable.ic_folder:0, 0, 0, 0);
+			textView.setCompoundDrawablesWithIntrinsicBounds(position > 1 ? R.drawable.ic_folder : 0, 0, 0, 0);
 			textView.setGravity(Gravity.CENTER_VERTICAL);
-			if (position==0)textView.setText(root.getPath());
-			else if (position==1)textView.setText("...");
-			else textView.setText(dirs[position].getName());
+			if (position == 0)
+				textView.setText(root.getPath());
+			else if (position == 1)
+				textView.setText("...");
+			else
+				textView.setText(dirs[position].getName());
 			return textView;
 		}
-		public void onItemClick(AdapterView<?> adapterView, View view, int position,
-				long id) {
+
+		public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
 			// TODO Auto-generated method stub
-			if (position>0){
+			if (position > 0) {
 				setDir(dirs[position]);
 				notifyDataSetChanged();
 			}
 		}
-		
+
 	}
 }

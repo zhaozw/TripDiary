@@ -5,11 +5,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+
 import com.yupog2003.tripdiary.fragments.CostBarChartFragment;
 import com.yupog2003.tripdiary.fragments.CostListFragment;
 import com.yupog2003.tripdiary.fragments.CostPieChartFragment;
+
 import android.os.Bundle;
-import android.support.v13.app.FragmentPagerAdapter;
+import android.support.v13.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -46,9 +48,9 @@ public class ViewCostActivity extends Activity{
 		  tabsAdapter.addTab(actionBar.newTab().setIcon(R.drawable.ic_money), CostListFragment.class, null);
 		  tabsAdapter.addTab(actionBar.newTab().setIcon(R.drawable.ic_piechart), CostPieChartFragment.class, null);
 		  tabsAdapter.addTab(actionBar.newTab().setIcon(R.drawable.ic_barchart), CostBarChartFragment.class, null);
-		  if (savedInstanceState!=null){
+		  /*if (savedInstanceState!=null){
 			  actionBar.setSelectedNavigationItem(savedInstanceState.getInt("tab"));
-		  		}
+		  		}*/
 	}
 	
 	
@@ -61,11 +63,11 @@ public class ViewCostActivity extends Activity{
 		}
 		return true;
 	}
-	@Override
+	/*@Override
 	  protected void onSaveInstanceState(Bundle outState){
 		  super.onSaveInstanceState(outState);
 		  outState.putInt("tab", getActionBar().getSelectedNavigationIndex());
-	  }
+	  }*/
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item){
 		if (item.getItemId() == android.R.id.home) {
@@ -118,7 +120,7 @@ public class ViewCostActivity extends Activity{
 		}
 		return false;
 	}
-	public static class TabsAdapter extends FragmentPagerAdapter implements ActionBar.TabListener,ViewPager.OnPageChangeListener{
+	public static class TabsAdapter extends FragmentStatePagerAdapter implements ActionBar.TabListener,ViewPager.OnPageChangeListener{
 		Context context;
 		ActionBar actionBar;
 		ViewPager viewPager;

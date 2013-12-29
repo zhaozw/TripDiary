@@ -11,22 +11,30 @@
         android:layout_above="@+id/buttonbar" >
     </RelativeLayout>
 
+    <ProgressBar
+        android:id="@+id/analysis_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="-7dip" />
+
     <TextView
         android:id="@+id/time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
         android:layout_above="@+id/playProcess"
+        android:layout_alignParentLeft="true"
+        android:textAppearance="@android:style/TextAppearance.Large"
         android:textColor="#0000FF"
-        android:visibility="gone"
-        android:textAppearance="@android:style/TextAppearance.Large" />
-    <SeekBar 
+        android:visibility="gone" />
+
+    <SeekBar
         android:id="@+id/playProcess"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@+id/buttonbar"
-        android:visibility="gone"
-        />
+        android:visibility="gone" />
 
     <LinearLayout
         android:id="@+id/buttonbar"

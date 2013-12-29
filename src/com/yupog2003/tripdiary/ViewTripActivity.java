@@ -3,8 +3,6 @@ package com.yupog2003.tripdiary;
 import java.io.File;
 
 import com.google.analytics.tracking.android.EasyTracker;
-import com.nostra13.universalimageloader.core.ImageLoader;
-import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.slidingmenu.lib.SlidingMenu;
 import com.yupog2003.tripdiary.data.DeviceHelper;
 import com.yupog2003.tripdiary.data.Trip;
@@ -88,10 +86,8 @@ public class ViewTripActivity extends Activity implements OnClickListener{
 		menu.attachToActivity(ViewTripActivity.this, SlidingMenu.SLIDING_CONTENT);
 		menu.setMenu(menuLayout);
 		setMode(0);
-		ImageLoaderConfiguration conf=new ImageLoaderConfiguration.Builder(ViewTripActivity.this)
-		.build();
-		ImageLoader.getInstance().init(conf);
 	}
+	
 	private void setMode(int mode){
 		FragmentTransaction ft=getFragmentManager().beginTransaction();
 		ft.hide(viewMapFragment);

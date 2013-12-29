@@ -77,6 +77,14 @@
         <item>2000</item>
         <item>5000</item>
     </string-array>
+    <string-array name="analysis_methods">
+        <item >新方法by JNI(快速,不穩定)</item>
+        <item >舊方法by Java(慢速,穩定)</item>
+    </string-array>
+    <string-array name="analysis_methods_value">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
     <string name="title_activity_category">類別</string>
     <string name="title_activity_view_map">ViewMap</string>
     <string name="input_the_poi_title">輸入興趣點標題</string>
@@ -160,7 +168,7 @@
 			<string name="playing_poi_speed">播放興趣點速度</string>
 			<string name="play_poi_speed_summary">播放興趣點時的速度</string>
 			<string name="track_color">軌跡顏色</string>
-			<string name="trip_setting">旅程設定</string>
+			<string name="display_setting">顯示設定</string>
 			<string name="trip_category">旅程類別</string>
 			<string name="select_sort_type">選擇排序依據</string>
 			<string name="trips_sort_type">旅程排序依據</string>
@@ -296,4 +304,6 @@
     <string name="choose_a_category">選擇一個類別</string>
     <string name="no_data_can_be_displayed">沒有資料可以顯示</string>
     <string name="cannot_start_media_recorder_due_to_unknowm_error">不明原因無法啟動Media Recorder</string>
+    <string name="analysis_method">分析方法</string>
+    <string name="the_method_used_to_analyze_gpx_file">分析.gpx檔的方法</string>
 </resources>

@@ -1,13 +1,18 @@
 package com.yupog2003.tripdiary.fragments;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.commons.io.input.CountingInputStream;
 
 import com.google.analytics.tracking.android.EasyTracker;
 import com.google.analytics.tracking.android.MapBuilder;
@@ -33,6 +38,8 @@ import com.yupog2003.tripdiary.ViewPointActivity;
 import com.yupog2003.tripdiary.ViewTripActivity;
 import com.yupog2003.tripdiary.data.DeviceHelper;
 import com.yupog2003.tripdiary.data.FileHelper;
+import com.yupog2003.tripdiary.data.GpxAnalyzer2;
+import com.yupog2003.tripdiary.data.GpxAnalyzer2.ProgressChangedListener;
 import com.yupog2003.tripdiary.data.MyLatLng2;
 import com.yupog2003.tripdiary.data.POI;
 import com.yupog2003.tripdiary.data.PackageHelper;
@@ -47,12 +54,10 @@ import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.app.NotificationManager;
-import android.app.ProgressDialog;
 import android.app.ActionBar.OnNavigationListener;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.DialogInterface.OnCancelListener;
 import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -65,6 +70,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.text.format.Time;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -117,6 +123,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 	SearchView search;
 	Thread playThread;
 	PlayRunnable playRunnable;
+	SetLocus setLocusTask;
 	Handler handler;
 	int trackColor;
 	LinearLayout buttonBar;
@@ -129,6 +136,8 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 	// private static final int playtriptype_normal=0;
 	private static final int playtriptype_skyview = 1;
 	private static final int request_write_location_to_POI = 1;
+	private static final int analysis_method_jni = 0;
+	private static final int analysis_method_java = 1;
 	View rootView;
 
 	@Override
@@ -148,7 +157,8 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 			nm.cancel(0);
 		}
 		if (new File(path + "/" + name + "/" + name + ".gpx").length() > 0) {
-			new SetLocus().execute(0);
+			setLocusTask = new SetLocus();
+			setLocusTask.execute(0);
 		} else {
 			handleCannotFindGpx();
 		}
@@ -198,6 +208,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 		if (playRunnable != null) {
 			playRunnable.onResume();
 		}
+
 	}
 
 	@Override
@@ -614,7 +625,8 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 	}
 
 	private void setPOIs() {
-		if (markers==null||ViewTripActivity.trip.pois==null||!isAdded())return;
+		if (markers == null || gmap == null || ViewTripActivity.trip.pois == null || !isAdded())
+			return;
 		markers.clear();
 		ViewTripActivity.trip.refreshPOIs();
 		for (int i = 0; i < ViewTripActivity.trip.pois.length; i++) {
@@ -666,26 +678,65 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 		}
 	}
 
-	class SetLocus extends AsyncTask<Integer, String, LatLng[]> {
+	class SetLocus extends AsyncTask<Integer, Integer, LatLng[]> {
 		int option;
-		ProgressDialog pd;
+		int analysisMethod;
+		ProgressBar progressBar;
+		GpxAnalyzer2.ProgressChangedListener listener;
+		long fileSize;
+		double latitude, longitude;
+		boolean animated;
+		CountingInputStream cis;
+
+		public void stop() {
+			if (ViewTripActivity.trip != null) {
+				ViewTripActivity.trip.stopGetCache();
+			}
+		}
 
 		@Override
 		protected void onPreExecute() {
-			pd = new ProgressDialog(getActivity());
-			pd.setTitle(getString(R.string.initial_map));
-			pd.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-			pd.setMessage(getString(R.string.initial_map));
-			pd.setCancelable(true);
-			pd.setOnCancelListener(new OnCancelListener() {
+			analysisMethod = analysis_method_jni;
+			animated = false;
+			fileSize = ViewTripActivity.trip.cacheFile.exists() ? ViewTripActivity.trip.cacheFile.length() : ViewTripActivity.trip.gpxFile.length();
+			progressBar = (ProgressBar) rootView.findViewById(R.id.analysis_progress);
+			progressBar.setVisibility(View.VISIBLE);
+			progressBar.setMax(100);
+			progressBar.setProgress(0);
+			listener = new ProgressChangedListener() {
 
-				public void onCancel(DialogInterface dialog) {
+				public void onProgressChanged(long progress) {
 					// TODO Auto-generated method stub
-					pd.dismiss();
-					getActivity().finish();
+					if (fileSize != 0)
+						publishProgress(0, (int) (progress * 100 / fileSize));
 				}
-			});
-			pd.show();
+			};
+			try {
+				BufferedReader br = new BufferedReader(new FileReader(ViewTripActivity.trip.gpxFile));
+				String s;
+				while ((s = br.readLine()) != null) {
+					if (s.contains("<trkpt")) {
+						String[] toks = s.split("\"");
+						if (s.indexOf("lat") > s.indexOf("lon")) {
+							latitude = Double.parseDouble(toks[3]);
+							longitude = Double.parseDouble(toks[1]);
+						} else {
+							latitude = Double.parseDouble(toks[1]);
+							longitude = Double.parseDouble(toks[3]);
+						}
+						break;
+					}
+				}
+				br.close();
+
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
 		}
 
 		@Override
@@ -693,18 +744,37 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 			// TODO Auto-generated method stub
 			option = arg0[0];
 			if (ViewTripActivity.trip.cacheFile.exists()) {
-				if (isAdded())
-					publishProgress(getString(R.string.analysis_gpx));
-				ViewTripActivity.trip.getCache();
+				if (isAdded()) {
+					publishProgress(1);
+					long startTime = System.currentTimeMillis();
+					switch (analysisMethod) {
+					case analysis_method_jni:
+						ViewTripActivity.trip.getCache2(getActivity(), handler, listener);
+						break;
+					case analysis_method_java:
+						ViewTripActivity.trip.getCache(listener);
+						break;
+					}
+					Log.i("trip", String.valueOf(System.currentTimeMillis() - startTime));
+				}
 			} else {
-				if (isAdded()){
-					publishProgress(getString(R.string.first_analysis_gpx));
-					ViewTripActivity.trip.updateCacheFromGpxFile(getActivity(), handler);
+				if (isAdded()) {
+					publishProgress(2);
+					long startTime = System.currentTimeMillis();
+					switch (analysisMethod) {
+					case analysis_method_jni:
+						ViewTripActivity.trip.getCache2(getActivity(), handler, listener);
+						break;
+					case analysis_method_java:
+						ViewTripActivity.trip.updateCacheFromGpxFile(getActivity(), handler, listener);
+						break;
+					}
+					Log.i("trip", String.valueOf(System.currentTimeMillis() - startTime));
 					if (option == request_write_location_to_POI) {
-						if (ViewTripActivity.trip.cache != null&&isAdded()) {
-							publishProgress(getString(R.string.setup_pois));
+						if (ViewTripActivity.trip.cache != null && isAdded()) {
+							publishProgress(3);
 							writeLocationToPoint(ViewTripActivity.trip.cache.lats);
-						} else if (isAdded()){
+						} else if (isAdded()) {
 							Toast.makeText(getActivity(), getString(R.string.gpx_doesnt_contain_time_information), Toast.LENGTH_LONG).show();
 						}
 					}
@@ -712,7 +782,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 				}
 			}
 			try {
-				if (ViewTripActivity.trip.cache!=null){
+				if (ViewTripActivity.trip.cache != null) {
 					final int latsSize = ViewTripActivity.trip.cache.lats.size();
 					lat = new LatLng[latsSize];
 					for (int i = 0; i < latsSize; i++) {
@@ -729,25 +799,45 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 		}
 
 		@Override
-		protected void onProgressUpdate(String... progress) {
-			if (isAdded())
-				pd.setMessage(progress[0]);
+		protected void onProgressUpdate(Integer... progress) {
+			if (isAdded()) {
+				switch (progress[0]) {
+				case 0:
+					progressBar.setProgress(progress[1]);
+					if (!animated && mapFragment.getMap() != null && gmap != null) {
+						gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 16));
+						animated = true;
+					}
+					break;
+				case 1:
+					Toast.makeText(getActivity(), getString(R.string.analysis_gpx), Toast.LENGTH_LONG).show();
+					break;
+				case 2:
+					Toast.makeText(getActivity(), getString(R.string.first_analysis_gpx), Toast.LENGTH_LONG).show();
+					break;
+				case 3:
+					Toast.makeText(getActivity(), getString(R.string.setup_pois), Toast.LENGTH_LONG).show();
+					break;
+				default:
+					break;
+				}
+			}
 		}
 
 		@Override
 		protected void onPostExecute(LatLng[] result) {
 			if (isAdded()) {
 				if (result != null && result.length > 0) {
-					setPOIs();
 					gmap.addPolyline(new PolylineOptions().add(result).width(5).color(trackColor));
-					gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(result[0], 16));
+					if (!animated && mapFragment.getMap() != null && gmap != null) {
+						gmap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 16));
+						animated = true;
+					}
 				} else {
 					Toast.makeText(getActivity(), getString(R.string.invalid_gpx_file), Toast.LENGTH_LONG).show();
-					if (option == request_write_location_to_POI) {
-						ViewTripActivity.trip.deleteCache();
-					}
+					ViewTripActivity.trip.deleteCache();
 				}
-				pd.dismiss();
+				progressBar.setVisibility(View.GONE);
 			}
 		}
 	}
@@ -776,7 +866,8 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 				break;
 			case import_track:
 				FileHelper.copyFile(new File(uri.getPath()), new File(path + "/" + name + "/" + name + ".gpx"));
-				new SetLocus().execute(request_write_location_to_POI);
+				setLocusTask = new SetLocus();
+				setLocusTask.execute(0);
 				break;
 			case REQUEST_GET_TOKEN:
 				if (resultCode == Activity.RESULT_OK) {
@@ -843,7 +934,9 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 
 	private MyLatLng2 getLatLngInTrack(LatLng latlng) {
 		MyLatLng2 result = new MyLatLng2(latlng.latitude, latlng.longitude, 0, TimeAnalyzer.formatInCurrentTimezone(new Time()));
-		if (ViewTripActivity.trip.cache.lats == null || lat == null)
+		if (ViewTripActivity.trip.cache == null || lat == null)
+			return result;
+		if (ViewTripActivity.trip.cache.lats == null)
 			return result;
 		double minDistance = Double.MAX_VALUE;
 		int resultIndex = 0;
@@ -1173,7 +1266,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 					}
 				}
 			}
-			if (latlength>0&&lat!=null){
+			if (latlength > 0 && lat != null) {
 				handler.post(new Runnable() {
 
 					public void run() {
@@ -1322,7 +1415,15 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 			}
 			return null;
 		}
+	}
 
+	@Override
+	public void onDestroy() {
+		// TODO Auto-generated method stub
+		if (setLocusTask != null && !setLocusTask.isCancelled()) {
+			setLocusTask.stop();
+		}
+		super.onDestroy();
 	}
 
 }

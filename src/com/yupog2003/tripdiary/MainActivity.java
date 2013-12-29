@@ -17,6 +17,8 @@ import com.google.analytics.tracking.android.EasyTracker;
 import com.google.analytics.tracking.android.MapBuilder;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.yupog2003.tripdiary.R;
 import com.yupog2003.tripdiary.data.ColorHelper;
 import com.yupog2003.tripdiary.data.PackageHelper;
@@ -84,11 +86,24 @@ public class MainActivity extends Activity implements Button.OnClickListener {
 		startTrip = (Button) findViewById(R.id.starttrip);
 		viewHistory = (Button) findViewById(R.id.viewhistory);
 		resumeTrip = (Button) findViewById(R.id.resume_trip);
-		if (checkPlayService()){
+		if (checkPlayService()) {
 			startTrip.setOnClickListener(this);
 			viewHistory.setOnClickListener(this);
 			resumeTrip.setOnClickListener(this);
 		}
+		ImageLoaderConfiguration conf = new ImageLoaderConfiguration.Builder(MainActivity.this).build();
+		ImageLoader.getInstance().init(conf);
+		SharedPreferences p=PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+		SharedPreferences.Editor e=p.edit();
+		if (p.getBoolean("deleted_cache", false)){
+			File[] files=new File(rootPath).listFiles();
+			for (int i=0;i<files.length;i++){
+				new File(files[i].getPath()+"/"+files[i].getName()+".gpx.cache").delete();
+			}
+			e.putBoolean("deleted_cache", true);
+			e.commit();
+		}
+		
 	}
 
 	@Override
@@ -96,12 +111,13 @@ public class MainActivity extends Activity implements Button.OnClickListener {
 		getMenuInflater().inflate(R.menu.activity_main, menu);
 		return true;
 	}
-	private boolean checkPlayService(){
-		int resultCode=GooglePlayServicesUtil.isGooglePlayServicesAvailable(MainActivity.this);
-		if (resultCode!=ConnectionResult.SUCCESS){
-			if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)){
+
+	private boolean checkPlayService() {
+		int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(MainActivity.this);
+		if (resultCode != ConnectionResult.SUCCESS) {
+			if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
 				GooglePlayServicesUtil.getErrorDialog(resultCode, MainActivity.this, PLAY_SERVICES_RESOLUTION_REQUEST).show();
-			}else{
+			} else {
 				Toast.makeText(MainActivity.this, "This device is not supported by Google Play Serivce", Toast.LENGTH_SHORT).show();
 				MainActivity.this.finish();
 			}
@@ -109,6 +125,7 @@ public class MainActivity extends Activity implements Button.OnClickListener {
 		}
 		return true;
 	}
+
 	@Override
 	protected void onResume() {
 		// TODO Auto-generated method stub
@@ -388,4 +405,7 @@ public class MainActivity extends Activity implements Button.OnClickListener {
 		EasyTracker.getInstance(this).activityStop(this);
 	}
 
+	static {
+		System.loadLibrary("TripDiary");
+	}
 }
