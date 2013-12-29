@@ -20,6 +20,7 @@ import android.content.res.Configuration;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.LinearLayout;
 
@@ -48,6 +49,7 @@ public class ViewTripActivity extends Activity implements OnClickListener{
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);  
 		setContentView(R.layout.activity_view_trip);
 		getActionBar().setDisplayHomeAsUpEnabled(true);
 		path = getIntent().getStringExtra("path");
