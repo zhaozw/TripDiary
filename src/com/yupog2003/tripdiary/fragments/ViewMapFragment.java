@@ -696,7 +696,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 
 		@Override
 		protected void onPreExecute() {
-			analysisMethod = analysis_method_java;
+			analysisMethod = analysis_method_jni;
 			animated = false;
 			fileSize = ViewTripActivity.trip.cacheFile.exists() ? ViewTripActivity.trip.cacheFile.length() : ViewTripActivity.trip.gpxFile.length();
 			progressBar = (ProgressBar) rootView.findViewById(R.id.analysis_progress);
@@ -736,7 +736,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
+			getActivity().setProgressBarIndeterminateVisibility(true);
 		}
 
 		@Override
@@ -766,15 +766,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 						ViewTripActivity.trip.getCache2(getActivity(), handler, listener);
 						break;
 					case analysis_method_java:
-						getActivity().setProgressBarIndeterminateVisibility(true);
 						ViewTripActivity.trip.updateCacheFromGpxFile(getActivity(), handler, listener);
-						handler.post(new Runnable() {
-							
-							public void run() {
-								// TODO Auto-generated method stub
-								getActivity().setProgressBarIndeterminateVisibility(false);
-							}
-						});
 						break;
 					}
 					Log.i("trip", String.valueOf(System.currentTimeMillis() - startTime));
@@ -846,6 +838,7 @@ public class ViewMapFragment extends Fragment implements OnInfoWindowClickListen
 					ViewTripActivity.trip.deleteCache();
 				}
 				progressBar.setVisibility(View.GONE);
+				getActivity().setProgressBarIndeterminateVisibility(false);
 			}
 		}
 	}

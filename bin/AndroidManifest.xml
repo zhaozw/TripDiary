@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.yupog2003.tripdiary"
-    android:versionCode="98"
+    android:versionCode="100"
     android:versionName="0.8.8" >
 
     <uses-sdk
@@ -100,7 +100,7 @@
             android:value="AEdPqrEAAAAI70FoJq0n2rVYt_ETDwHhXfMLcPdoi9lLBBtpqA" />
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
-            android:value="AIzaSyAzPVZdjSt1ODGT9gNuTvbjZWUgpgKG-Q4" />
+            android:value="AIzaSyB7TjUZYwxnrVWoUZLl_Nt8ddb4Mo9ebOM" />
         <!-- publish key=  AIzaSyAzPVZdjSt1ODGT9gNuTvbjZWUgpgKG-Q4 -->
         <!-- debug key=    AIzaSyB7TjUZYwxnrVWoUZLl_Nt8ddb4Mo9ebOM -->
 

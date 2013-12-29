@@ -73,12 +73,11 @@ double distFrom(double lat1, double lng1, double lat2, double lng2) {
 	dist = earthRadius * dist;
 	return dist;
 }
+
 static double now_ms(void) {
-
-    struct timespec res;
-    clock_gettime(CLOCK_REALTIME, &res);
-    return 1000.0 * res.tv_sec + (double) res.tv_nsec / 1e6;
-
+	struct timespec res;
+	clock_gettime(CLOCK_REALTIME, &res);
+	return 1000.0 * res.tv_sec + (double) res.tv_nsec / 1e6;
 }
 class MyLatLng2 {
 public:
@@ -147,17 +146,23 @@ JNIEXPORT jboolean Java_com_yupog2003_tripdiary_data_GpxAnalyzer2_parse(JNIEnv* 
 	float preAltitude = 0;
 	unsigned int count = 0;
 	jobject latsObject = env->NewObject(arrayListClass, struct_ArrayList);
+	latlng = new MyLatLng2;
+	string timeStr;
 	while (getline(fis, s)) {
-		if (stop)
+		if (stop) {
 			return false;
+		}
 		count++;
 		if (count == 5000) {
 			env->CallVoidMethod(thiz, progress_changed, (jlong) fis.tellg());
 			count = 0;
 		}
 		if (contains(s, "<trkpt")) {
-			latlng = new MyLatLng2;
-			char *c = const_cast<char*>(s.c_str());
+			char c[512];
+			if (s.length() > 512) {
+				return false;
+			}
+			strcpy(c, s.c_str());
 			if (s.find("lat") > s.find("lon")) {
 				strtok(c, "\"");
 				latlng->lng = atof(strtok(NULL, "\""));
@@ -169,7 +174,6 @@ JNIEXPORT jboolean Java_com_yupog2003_tripdiary_data_GpxAnalyzer2_parse(JNIEnv* 
 				strtok(NULL, "\"");
 				latlng->lng = atof(strtok(NULL, "\""));
 			}
-			free(c);
 		} else if (contains(s, "<ele>")) {
 			float altitude = atof(s.substr(s.find(">") + 1, s.rfind("<") - s.find(">") - 1).c_str());
 			latlng->altitude = altitude;
@@ -178,7 +182,7 @@ JNIEXPORT jboolean Java_com_yupog2003_tripdiary_data_GpxAnalyzer2_parse(JNIEnv* 
 			if (altitude < minAltitude)
 				minAltitude = altitude;
 		} else if (contains(s, "<time>")) {
-			string timeStr = s.substr(s.find(">") + 1, s.rfind("Z") - s.find(">") - 1);
+			timeStr = s.substr(s.find(">") + 1, s.rfind("Z") - s.find(">") - 1);
 			tm t;
 			strptime(timeStr.c_str(), "%Y-%m-%dT%H:%M:%S", &t);
 			t.tm_isdst = 0;
@@ -213,9 +217,9 @@ JNIEXPORT jboolean Java_com_yupog2003_tripdiary_data_GpxAnalyzer2_parse(JNIEnv* 
 			env->CallBooleanMethod(latsObject, arrayList_add, myLatLng2);
 			env->DeleteLocalRef(time);
 			env->DeleteLocalRef(myLatLng2);
-			free(latlng);
 		}
 	}
+	delete latlng;
 	fis.close();
 	int trackSize = track.size();
 	int timesSize = times.size();
@@ -235,7 +239,6 @@ JNIEXPORT jboolean Java_com_yupog2003_tripdiary_data_GpxAnalyzer2_parse(JNIEnv* 
 		}
 		if (maxSpeed < speed)
 			maxSpeed = speed;
-
 	}
 	if (stop)
 		return false;
@@ -251,7 +254,6 @@ JNIEXPORT jboolean Java_com_yupog2003_tripdiary_data_GpxAnalyzer2_parse(JNIEnv* 
 	sss << hour << ":" << min << ":" << sec;
 	string totalTime = sss.str();
 	float avgSpeed = distance / totalSeconds * 18 / 5;
-
 	env->SetObjectField(cache, mLats, latsObject);
 	jstring jstartTime = env->NewStringUTF(track[0].time.c_str());
 	jstring jendTime = env->NewStringUTF(track[track.size() - 1].time.c_str());
@@ -259,17 +261,16 @@ JNIEXPORT jboolean Java_com_yupog2003_tripdiary_data_GpxAnalyzer2_parse(JNIEnv* 
 	env->SetObjectField(cache, mStartTime, jstartTime);
 	env->SetObjectField(cache, mEndTime, jendTime);
 	env->SetObjectField(cache, mTotalTime, jtotalTime);
-	env->SetFloatField(cache, mDistance, distance);
-	env->SetFloatField(cache, mAvgSpeed, avgSpeed);
-	env->SetFloatField(cache, mMaxSpeed, maxSpeed);
-	env->SetFloatField(cache, mClimb, totalAltitude);
-	env->SetFloatField(cache, mMaxAltitude, maxAltitude);
-	env->SetFloatField(cache, mMinAltitude, minAltitude);
+	env->SetFloatField(cache, mDistance, (jfloat) distance);
+	env->SetFloatField(cache, mAvgSpeed, (jfloat) avgSpeed);
+	env->SetFloatField(cache, mMaxSpeed, (jfloat) maxSpeed);
+	env->SetFloatField(cache, mClimb, (jfloat) totalAltitude);
+	env->SetFloatField(cache, mMaxAltitude, (jfloat) maxAltitude);
+	env->SetFloatField(cache, mMinAltitude, (jfloat) minAltitude);
 	env->DeleteLocalRef(latsObject);
 	env->DeleteLocalRef(jstartTime);
 	env->DeleteLocalRef(jendTime);
 	env->DeleteLocalRef(jtotalTime);
-
 	ofstream fos(cachePath, ofstream::out);
 	fos.precision(12);
 	fos << track[0].time << endl;
@@ -304,17 +305,17 @@ JNIEXPORT bool Java_com_yupog2003_tripdiary_data_GpxAnalyzer2_getCache(JNIEnv* e
 	env->SetObjectField(cache, mEndTime, jendTime);
 	env->SetObjectField(cache, mTotalTime, jtotalTime);
 	getline(fis, s);
-	env->SetFloatField(cache, mDistance, (jfloat)atof(s.c_str()));
+	env->SetFloatField(cache, mDistance, (jfloat) atof(s.c_str()));
 	getline(fis, s);
-	env->SetFloatField(cache, mAvgSpeed, (jfloat)atof(s.c_str()));
+	env->SetFloatField(cache, mAvgSpeed, (jfloat) atof(s.c_str()));
 	getline(fis, s);
-	env->SetFloatField(cache, mMaxSpeed, (jfloat)atof(s.c_str()));
+	env->SetFloatField(cache, mMaxSpeed, (jfloat) atof(s.c_str()));
 	getline(fis, s);
-	env->SetFloatField(cache, mClimb, (jfloat)atof(s.c_str()));
+	env->SetFloatField(cache, mClimb, (jfloat) atof(s.c_str()));
 	getline(fis, s);
-	env->SetFloatField(cache, mMaxAltitude, (jfloat)atof(s.c_str()));
+	env->SetFloatField(cache, mMaxAltitude, (jfloat) atof(s.c_str()));
 	getline(fis, s);
-	env->SetFloatField(cache, mMinAltitude, (jfloat)atof(s.c_str()));
+	env->SetFloatField(cache, mMinAltitude, (jfloat) atof(s.c_str()));
 	env->DeleteLocalRef(jstartTime);
 	env->DeleteLocalRef(jendTime);
 	env->DeleteLocalRef(jtotalTime);
@@ -329,12 +330,12 @@ JNIEXPORT bool Java_com_yupog2003_tripdiary_data_GpxAnalyzer2_getCache(JNIEnv* e
 			count = 0;
 		}
 		jobject myLatLng2 = env->NewObject(myLatLng2Class, struct_MyLatLng2);
-		env->SetDoubleField(myLatLng2, mLatitude, (jdouble)atof(s.c_str()));
-		getline(fis,s);
-		env->SetDoubleField(myLatLng2, mLongitude, (jdouble)atof(s.c_str()));
-		getline(fis,s);
-		env->SetFloatField(myLatLng2, mAltitude, (jfloat)atof(s.c_str()));
-		getline(fis,s);
+		env->SetDoubleField(myLatLng2, mLatitude, (jdouble) atof(s.c_str()));
+		getline(fis, s);
+		env->SetDoubleField(myLatLng2, mLongitude, (jdouble) atof(s.c_str()));
+		getline(fis, s);
+		env->SetFloatField(myLatLng2, mAltitude, (jfloat) atof(s.c_str()));
+		getline(fis, s);
 		jstring time = env->NewStringUTF(s.c_str());
 		env->SetObjectField(myLatLng2, mTime, time);
 		env->CallBooleanMethod(latsObject, arrayList_add, myLatLng2);
